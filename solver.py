@@ -5,7 +5,6 @@ from networkx.utils import pairwise
 import gen
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
-import munkres
 import kingdom_utils as k_utils
 
 def greedy_subtractive_dominating_set(G, value_fn):
@@ -107,32 +106,14 @@ def solve_degree_per_weight_bcop_christofides(G):
 
     G_matching = nx.Graph()
     G_matching.add_nodes_from(odd)
-    # print(odd)
     for a in odd:
         for b in odd:
             # invert weights to find minimal matching
             G_matching.add_edge(a, b, weight=1 / (1 + dist[a][b]))
     match_edges = nx.max_weight_matching(G_matching)
-    # print(match_edges)
-
-
-    # # all-pairs cost matrix of odd vertices
-    # matrix = [ [ dist[a][b] if a != b else munkres.DISALLOWED for b in odd ] for a in odd ]
-    # # O(n^3) Munkres (Hungarian) algorithm for min-weight perfect pairing
-    # # http://software.clapper.org/munkres/api/index.html
-    # m = munkres.Munkres()
-    # # (a, b) or (b, a) pairs
-    # indices = m.compute(matrix)
 
     # eulerian multigraph
     G_euler = nx.MultiGraph(G_tree)
-    # print('deg:', G_tree.degree())
-    # # print(indices)
-    # for i, j in indices:
-    #     if j >= i: # prevent dupes
-    #         continue
-    #     G_euler.add_edge(odd[i], odd[j], weight=matrix[i][j])
-    
     for a, b in match_edges:
         G_euler.add_edge(a, b, weight=dist[a][b])
     if not nx.is_eulerian(G_euler):
