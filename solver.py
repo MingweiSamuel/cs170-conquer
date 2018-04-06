@@ -6,21 +6,8 @@ import gen
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
 import kingdom_utils as k_utils
+from value_fns import value_fns
 
-def greedy_subtractive_dominating_set(G, value_fn):
-    ds = set(G.nodes())
-    prio = seq(G.nodes()).order_by(value_fn)
-    for node in prio:
-        ds.remove(node)
-        if not nx.is_dominating_set(G, ds):
-            ds.add(node)
-    return ds
-
-def greedy_weight_subtractive_dominating_set(G):
-    return greedy_subtractive_dominating_set(G, lambda n: -G.nodes[n]['weight'])
-
-def greedy_degree_per_weight_subtractive_dominating_set(G):
-    return greedy_subtractive_dominating_set(G, lambda n: G.degree[n] / G.nodes[n]['weight'])
 
 def greedy_additive_dominating_set(G):
     covered = set()
@@ -37,8 +24,21 @@ def greedy_additive_dominating_set(G):
         covered.add(node)
         covered.update(G.neighbors(node))
         ds.add(node)
-    
+
     return ds
+
+def make_greedy_sub_ds_fn(value_fn):
+    def greedy_sub_ds_fn(G):
+        ds = set(G.nodes())
+        prio = seq(G.nodes()).order_by(value_fn(G))
+        for node in prio:
+            ds.remove(node)
+            if not nx.is_dominating_set(G, ds):
+                ds.add(node)
+        return ds
+    greedy_sub_ds_fn.__name__ += '({})'.format(value_fn.__name__)
+    return greedy_sub_ds_fn
+
 
 def greedy_tour(G, ds):
     # first get shortest paths
@@ -70,7 +70,7 @@ def solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn):
     return tour, ds
 
 
-# bcop heuristics:
+# cds heuristics:
 # - degree / weight
 # - betweenness centrality from edge-weighted paths
 # - betweenness centrality from edge and vertex-weighted paths
@@ -80,24 +80,36 @@ def solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn):
 # - max cost
 # - min degree / cost
 
-def solve_degree_per_weight_bcop_christofides(G):
-    cds = set(G.nodes())
-    prio = list(G.nodes(data=True))
-    prio.sort(key=lambda x: G.degree(x[0]) / x[1]['weight'])
-    # greedily remove nodes by lowest degree / weight, maintaining connectedness
-    for node, _ in prio:
-        cds.remove(node)
-        if not nx.is_dominating_set(G, cds) or \
-                not g_utils.is_connected_subset(G, cds):
-            cds.add(node) # add it back
+# connected dominating set + christofides
 
-    # chritofides algorithm
+def make_greedy_sub_cds_fn(value_fn):
+    def greedy_sub_cds_fn(G):
+        cds = set(G.nodes())
+        prio = seq(G.nodes()).order_by(value_fn(G))
+        for node in prio:
+            cds.remove(node)
+            if not nx.is_dominating_set(G, cds) or \
+                    not g_utils.is_connected_subset(G, cds):
+                cds.add(node)
+        return cds
+    greedy_sub_cds_fn.__name__ += '({})'.format(value_fn.__name__)
+    return greedy_sub_cds_fn
 
+
+
+
+def solve_cds_christofides(G, cds_fn):
+    cds = cds_fn(G)
+    if not nx.is_dominating_set(G, cds) or \
+            not g_utils.is_connected_subset(G, cds):
+        raise Exception('CDS fn did not return a valid CDS')
+
+    # christofides
     # all pairs shortest dist graph (of original)
     pred, dist, path = g_utils.floyd_warshall_all(G)
     
     # construct CDS tree
-    G_tree = g_utils.minimum_subset_spanning_tree(G, cds)
+    G_tree = g_utils.minimum_connected_subset_spanning_tree(G, cds)
 
     # get odd degree nodes in trees
     odd = seq(G_tree.nodes()) \
@@ -106,10 +118,14 @@ def solve_degree_per_weight_bcop_christofides(G):
 
     G_matching = nx.Graph()
     G_matching.add_nodes_from(odd)
+    max_dist = 0
     for a in odd:
         for b in odd:
-            # invert weights to find minimal matching
-            G_matching.add_edge(a, b, weight=1 / (1 + dist[a][b]))
+            max_dist = max(max_dist, dist[a][b])
+    for a in odd:
+        for b in odd:
+            # invert weights to find *minimal* matching
+            G_matching.add_edge(a, b, weight=max_dist - dist[a][b])
     match_edges = nx.max_weight_matching(G_matching)
 
     # eulerian multigraph
@@ -128,7 +144,7 @@ def solve_degree_per_weight_bcop_christofides(G):
             .to_list()
 
     # TODO smart cutting short
-    stops = remove_dupes(stops)
+    stops = g_utils.remove_dupes(stops)
 
     # remove extra from cds (connected dominating set) to make ds (dominating set)
     ds = set(cds)
@@ -140,8 +156,8 @@ def solve_degree_per_weight_bcop_christofides(G):
             break
         to_remove = seq(can_remove) \
                 .max_by(lambda n: G.nodes[n]['weight'] \
-                        + dist[stops.index(n) - 1][n] + dist[n][(stops.index(n) + 1) % len(dist)] \
-                        - dist[stops.index(n) - 1][stops.index(n) + 1])
+                        + dist[stops[stops.index(n) - 1]][n] + dist[n][stops[(stops.index(n) + 1) % len(stops)]] \
+                        - dist[stops[stops.index(n) - 1]][stops[(stops.index(n) + 1) % len(stops)]])
                         # )
         # print('removing ' + str(to_remove))
         ds.remove(to_remove)
@@ -154,10 +170,7 @@ def solve_degree_per_weight_bcop_christofides(G):
 
     return tour, ds
 
-def remove_dupes(seq):
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
+
 
 def print_solution_info(G, tour, ds):
     k_utils.check(G, tour, ds)
@@ -168,23 +181,36 @@ def print_solution_info(G, tour, ds):
     print('Tour Len: {}, DS Len: {}'.format(len(tour), len(ds)))
     print()
 
+###
+
 rand.seed(0)
 
-G = gen.random_graph(200, 2, 0.02)
+G = gen.random_graph_trick_nodes(200, 2, 0.02)
 gen.check(G)
 
 
-tour, ds = solve_degree_per_weight_bcop_christofides(G)
-print('smart')
-print_solution_info(G, tour, ds)
+
+cds_fns = [
+    make_greedy_sub_cds_fn(value_fn) for value_fn in value_fns
+]
+for cds_fn in cds_fns:
+    print('{} {}'.format(solve_cds_christofides.__name__, cds_fn.__name__))
+    tour, ds = solve_cds_christofides(G, cds_fn)
+    print_solution_info(G, tour, ds)
+
 
 
 dominating_set_fns = [
-    greedy_additive_dominating_set,
-    greedy_weight_subtractive_dominating_set,
-    greedy_degree_per_weight_subtractive_dominating_set
+    greedy_additive_dominating_set
 ]
-tour_fns = [ greedy_tour ]
+dominating_set_fns.extend([ make_greedy_sub_ds_fn(value_fn) for value_fn in value_fns ])
+
+tour_fns = [
+    greedy_tour,
+    g_utils.christofides_tour,
+    g_utils.nearest_detour_tour,
+]
+
 for dominating_set_fn in dominating_set_fns:
     for tour_fn in tour_fns:
         print('{} {} {}'.format(solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__))

@@ -1,4 +1,5 @@
 import random as rand
+from functional import seq
 import networkx as nx
 import skeleton.student_utils_sp18 as s_utils
 import graph_utils as g_utils
@@ -14,6 +15,15 @@ def random_graph(n, dim, epct):
             if rand.uniform(0, 1) < epct:
                 dist = sum([ (pos[a][i] - pos[b][i]) ** 2 for i in range(dim) ]) ** 0.5
                 G.add_edge(a, b, weight=dist)
+    return G
+
+def random_graph_trick_nodes(n, dim, epct):
+    G = random_graph(n, dim, epct)
+    for n in G.nodes:
+        avg = seq(G.edges(n, data=True)) \
+                .map(lambda e: e[2]['weight'] + 0.1) \
+                .min()
+        G.nodes[n]['weight'] = 1e3 / avg
     return G
 
 def check(G):

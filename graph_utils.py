@@ -1,6 +1,8 @@
 import math
+import random as rand
 from functional import seq
 import networkx as nx
+from networkx.utils import pairwise
 from networkx.utils.union_find import UnionFind
 
 def floyd_warshall_all(G):
@@ -21,12 +23,99 @@ def subgraph(G, nodes):
 def is_connected_subset(G, nodes): 
     return nx.is_connected(subgraph(G, nodes))
 
-def minimum_subset_spanning_tree(G, nodes, **kwargs):
+def minimum_connected_subset_spanning_tree(G, nodes, **kwargs):
     return nx.minimum_spanning_tree(subgraph(G, nodes), **kwargs)
+
+def nearest_detour_tour(G, nodes):
+    nodes = list(nodes)
+    pred, dist, path = floyd_warshall_all(G)
+
+    nodes_left = set(nodes)
+    stops = [ rand.choice(nodes) ]
+    nodes_left.remove(stops[0])
+
+    # best = lambda n: seq(range(len(stops))) \
+    #         .map(lambda i: (i, dist[stops[i - 1]][n])) \
+    #         .min_by(lambda p: p[1])
+    best = lambda n: seq(range(len(stops))) \
+            .map(lambda i: (i, dist[stops[i - 1]][n] + dist[n][stops[i]])) \
+            .min_by(lambda p: p[1])
+    while nodes_left:
+        nex = seq(nodes_left) \
+                .map(lambda n: (n,) + tuple(best(n))) \
+                .min_by(lambda p: p[2])
+        node, i, _ = nex
+        stops.insert(i, node)
+        nodes_left.remove(node)
+    
+    tour = stops_to_tour(stops, path)
+    return tour
+        
+
+def christofides_tour(G, nodes):
+    # christofides
+    # all pairs shortest dist graph (of original)
+    pred, dist, path = floyd_warshall_all(G)
+    
+    G_full = nx.Graph()
+    G_full.add_nodes_from(nodes)
+    for a in nodes:
+        for b in nodes:
+            G_full.add_edge(a, b, weight=dist[a][b])
+            
+    G_tree = nx.minimum_spanning_tree(G_full)
+
+    # get odd degree nodes in trees
+    odd = seq(G_tree.nodes()) \
+            .filter(lambda n: G_tree.degree(n) % 2 == 1) \
+            .to_list()
+
+    G_matching = nx.Graph()
+    G_matching.add_nodes_from(odd)
+    max_dist = 0
+    for a in odd:
+        for b in odd:
+            max_dist = max(max_dist, dist[a][b])
+    for a in odd:
+        for b in odd:
+            # invert weights to find *minimal* matching
+            G_matching.add_edge(a, b, weight=max_dist - dist[a][b])
+    match_edges = nx.max_weight_matching(G_matching)
+
+    # eulerian multigraph
+    G_euler = nx.MultiGraph(G_tree)
+    for a, b in match_edges:
+        G_euler.add_edge(a, b, weight=dist[a][b])
+    if not nx.is_eulerian(G_euler):
+        raise Exception('New G_euler not eulerian')
+
+    # All vertices now have even degree. We construct a eulerian tour.
+    # This doesn't contain all the "bridge" vertices we need for the
+    # added "indices". Hence it is called "stops" as in "tour stops"
+    # rather than "tour".
+    stops = seq(nx.eulerian_circuit(G_euler)) \
+            .map(lambda e: e[0]) \
+            .to_list()
+
+    # TODO smart cutting short
+    stops = remove_dupes(stops)
+
+    tour = stops_to_tour(stops, path)
+    return tour
+
+def stops_to_tour(stops, path):
+    return seq(pairwise(stops + [ stops[0] ])) \
+            .flat_map(lambda e: path(e[0], e[1])) \
+            .to_list()
+
+def remove_dupes(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
 
 
 # https://networkx.github.io/documentation/stable/_modules/networkx/algorithms/shortest_paths/dense.html#floyd_warshall_predecessor_and_distance
-def floyd_warshall_all_predecessors_and_distance(G, weight='weight'):
+def floyd_warshall_all_multi(G, weight='weight'):
     """Find all-pairs shortest path lengths using Floyd's algorithm.
 
     Parameters
@@ -84,4 +173,13 @@ def floyd_warshall_all_predecessors_and_distance(G, weight='weight'):
                     continue
                 elif dist[u][v] == dist[u][w] + dist[w][v]:
                     pred[u][v] = pred[u][v].union(pred[w][v])
-    return dict(pred), dict(dist)
+
+    # return a list of paths
+    # could be sped up with DP
+    def all_paths(u, v):
+        if u == v:
+            return [[]]
+        return seq(pred[v][u]) \
+                .flat_map(lambda nu: all_paths(nu, v)) \
+                .map(lambda path: [ u ] + path)
+    return dict(pred), dict(dist), all_paths
