@@ -19,15 +19,16 @@ def random_graph(n, dim, epct):
 
 def random_connected_graph(n, dim, epct):
     G = nx.Graph()
+    pos = [[ rand.randint(0, 1000) for _ in range(dim) ] for _ in range(n) ]
     for a in range(n):
-        pos = [[ rand.randint(0, 1000) for _ in range(dim) ] for _ in range(n) ]
-        nodes = G.nodes();
+        nodes = [node for node in G.nodes()]
         G.add_node(a, weight=rand.randint(1, 1000))
-        index = rand.randint(0, len(nodes))
-        for i in len(nodes):
-            if i == index or rand.uniform(0, 1) < epct:
-                dist = sum([ (pos[a][i] - pos[b][i]) ** 2 for i in range(dim) ]) ** 0.5
-                G.add_edge(a, b, weight=dist)
+        if len(nodes) > 0:
+            index = rand.randint(0, len(nodes) - 1)
+            for m in nodes:
+                if m == nodes[index] or rand.uniform(0, 1) < epct:
+                    dist = sum([ (pos[a][k] - pos[m][k]) ** 2 for k in range(dim) ]) ** 0.5
+                    G.add_edge(a, m, weight=dist)
     return G
 
 def random_graph_trick_nodes(n, dim, epct):
