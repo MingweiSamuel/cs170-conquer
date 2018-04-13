@@ -107,8 +107,6 @@ def genU4():
     G.add_edge(3, 4, weight = 1)
     return G, 0, 4, ((0, True), (2, False), (4,True)), 4
 
-def genU5():
-
 def getUnit():
     units = [genU1, genU2, genU3, genU4]
     return units[random.randrange(0,len(units))]()
