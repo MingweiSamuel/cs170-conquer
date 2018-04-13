@@ -53,7 +53,7 @@ def diamond():
     G.add_edge('A1', 'B0', weight=1)
     G.add_edge('A1', 'B1', weight=1)
     G.add_edge('A1', 'B2', weight=1)
-    
+
     G.add_edge('B0', 'C0', weight=1)
     G.add_edge('B1', 'C1', weight=1)
     G.add_edge('B2', 'C2', weight=1)
@@ -170,12 +170,9 @@ def genU4():
     G.add_edge(3, 4, weight = 1)
     return G, 0, 4, ((0, True), (2, False), (4,True)), 4
 
-<<<<<<< HEAD
-=======
 def genU5():
     pass
 
->>>>>>> f1cf52f5992a868a6f9b9ccec9bc029f5de55544
 def getUnit():
     units = [genU1, genU2, genU3, genU4]
     return units[random.randrange(0,len(units))]()
