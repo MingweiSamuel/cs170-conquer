@@ -24,3 +24,5 @@ dist, prev, all_paths = g_utils.floyd_warshall_all_multi(G)
 
 print(dist, prev)
 print(all_paths(0, 5))
+
+print(g_utils.stops_to_tour([ 1, 2, 3, 4, 5 ]))
