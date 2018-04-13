@@ -3,6 +3,7 @@ from functional import seq
 import networkx as nx
 from networkx.utils import pairwise
 import gen
+import gtsp
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
 import kingdom_utils as k_utils
@@ -186,10 +187,38 @@ def print_solution_info(G, tour, ds):
 
 rand.seed(0)
 
+
+###
+from baf14st70 import G, clusters, tour
+
+G = gtsp.gtsp_to_conquer(G, clusters)
+
+for _, _, data in G.edges(data=True):
+    data['weight'] += 0.00004
+
+print('known solution')
+tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
+print_solution_info(G, tour, ds)
+###
+
 #G = gen.random_graph_trick_nodes(200, 2, 0.02)
-G = gen.trapezoid_1()
+# G = gen.trapezoid_1()
+
+# with open('gtsp/11eil51.txt') as f:
+#     G, clusters = gtsp.read_text_gtsp(f)
+# G = gtsp.gtsp_to_conquer(G, clusters)
 
 gen.check(G)
+
+
+# with open('gtsp/11eil51.solution.txt') as f:
+#     _, tour = gtsp.read_solution_gtsp(f)
+# print('known solution')
+# tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
+# print_solution_info(G, tour, ds)
+
+
+
 
 
 count = 0
