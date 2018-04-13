@@ -78,8 +78,8 @@ def christofides_tour(G, nodes):
             max_dist = max(max_dist, dist[a][b])
     for a in odd:
         for b in odd:
-            # invert weights to find *minimal* matching
-            G_matching.add_edge(a, b, weight=max_dist - dist[a][b])
+            # invert weights to find *minimal* matching (+1 for nonzero)
+            G_matching.add_edge(a, b, weight=1 + max_dist - dist[a][b])
     match_edges = nx.max_weight_matching(G_matching)
 
     # eulerian multigraph

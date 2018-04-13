@@ -15,7 +15,7 @@ def greedy_additive_dominating_set(G):
     def value(node):
         new_covered = set(G.neighbors(node))
         new_covered.add(node)
-        return len(new_covered - covered)
+        return len(new_covered - covered) / G.nodes[node]['weight']
 
     while len(covered) < len(G):
         node = seq(G.nodes()) \
@@ -124,8 +124,8 @@ def solve_cds_christofides(G, cds_fn):
             max_dist = max(max_dist, dist[a][b])
     for a in odd:
         for b in odd:
-            # invert weights to find *minimal* matching
-            G_matching.add_edge(a, b, weight=max_dist - dist[a][b])
+            # invert weights to find *minimal* matching (+1 for nonzero)
+            G_matching.add_edge(a, b, weight=1 + max_dist - dist[a][b])
     match_edges = nx.max_weight_matching(G_matching)
 
     # eulerian multigraph
@@ -179,22 +179,28 @@ def print_solution_info(G, tour, ds):
     print('Cost: {:,.2f}, Tour: {:,.2f} ({:.2f}%), DS: {:,.2f} ({:.2f}%).' \
             .format(cost_total, cost_tour, 100 * cost_tour / cost_total, cost_ds, 100 * cost_ds / cost_total))
     print('Tour Len: {}, DS Len: {}'.format(len(tour), len(ds)))
+    print(tour, ds)
     print()
 
 ###
 
 rand.seed(0)
 
-G = gen.random_graph_trick_nodes(200, 2, 0.02)
+#G = gen.random_graph_trick_nodes(200, 2, 0.02)
+G = gen.trapezoid_1()
+
 gen.check(G)
 
+
+count = 0
 
 
 cds_fns = [
     make_greedy_sub_cds_fn(value_fn) for value_fn in value_fns
 ]
 for cds_fn in cds_fns:
-    print('{} {}'.format(solve_cds_christofides.__name__, cds_fn.__name__))
+    count += 1
+    print('{} {} {}'.format(count, solve_cds_christofides.__name__, cds_fn.__name__))
     tour, ds = solve_cds_christofides(G, cds_fn)
     print_solution_info(G, tour, ds)
 
@@ -213,7 +219,8 @@ tour_fns = [
 
 for dominating_set_fn in dominating_set_fns:
     for tour_fn in tour_fns:
-        print('{} {} {}'.format(solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__))
+        count += 1
+        print('{} {} {} {}'.format(count, solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__))
         tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn)
         print_solution_info(G, tour, ds)
 
