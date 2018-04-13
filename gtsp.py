@@ -61,7 +61,6 @@ def read_text_gtsp(inp):
     11476
     >>> len(clusters)
     31
-    >>> clusters
     """
 
     N_match = re.search(r'^N:\s*(\d+)\s*$', next(inp), re.IGNORECASE)
@@ -172,3 +171,64 @@ def gtsp_to_conquer_solution(clusters, tour):
             clusters = missed_clusters # Update list of clusters.
     
     return new_tour, ds
+
+# Convert conquer to GTSP
+def conquer_to_gtsp(G):
+    """
+    NAME : rat575
+    COMMENT : Rattled grid (Pulleyblank)
+    TYPE : TSP
+    DIMENSION : 575
+    GTSP_SETS : 115
+    EDGE_WEIGHT_TYPE : EUC_2D
+    NODE_COORD_SECTION
+
+    >>> import random
+    >>> random.seed(3)
+    >>> import gen
+    >>> G = gen.random_graph(100, 5, 0.1)
+    >>> G, clusters = conquer_to_gtsp(G)
+    >>> len(G)
+    100
+    >>> len(clusters)
+    928
+    """
+    N = len(G)
+    dist = dict(nx.floyd_warshall(G))
+    G_gtsp = nx.Graph()
+    G_gtsp.add_nodes_from(range(N))
+    for u, v in itertools.product(range(N), range(N)):
+        if u >= v:
+            continue
+        w = dist[u][v] + (G.nodes[u]['weight'] + G.nodes[v]['weight']) / 2
+        # w *= 1e2 # TODO
+        w = int(w)
+        G_gtsp.add_edge(u, v, weight=w)
+    
+    clusters = [ set((u, v)) for u, v in G.edges() ]
+    
+    return G_gtsp, clusters
+        
+def output_gtsp(output, G, clusters, name='unnamed'):
+    output.write('NAME: ' + str(name) + '\n')
+    output.write('COMMENT: ' + ' auto generated ' + name + '\n')
+    output.write('TYPE: TSP\n')
+    output.write('DIMENSION: ' + str(len(G)) + '\n')
+    output.write('GTSP_SETS: ' + str(len(clusters)) + '\n')
+    output.write('EDGE_WEIGHT_TYPE: EXPLICIT\n')
+    output.write('EDGE_WEIGHT_FORMAT: LOWER_DIAG_ROW\n')
+    output.write('EDGE_WEIGHT_SECTION:\n')
+    for u in range(len(G)):
+        for v in range(u + 1):
+            if u == v:
+                output.write('0')
+            else:
+                output.write(str(G[u][v]['weight']))
+            output.write(' ')
+        output.write('\n')
+    output.write('GTSP_SET_SECTION:\n')
+    for i, cluster in enumerate(clusters):
+        # Add 1 to clusters because of 1-indexing.
+        row = [ str(i + 1) ] + seq(cluster).map(lambda n: n + 1).map(str).to_list() + [ '-1\n' ]
+        output.write(' '.join(row))
+    output.write('EOF\n')
