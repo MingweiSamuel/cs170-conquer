@@ -173,15 +173,9 @@ def gtsp_to_conquer_solution(clusters, tour):
     return new_tour, ds
 
 # Convert conquer to GTSP
-def conquer_to_gtsp(G):
+def conquer_to_gtsp(G, high_edge_weight=1e8):
     """
-    NAME : rat575
-    COMMENT : Rattled grid (Pulleyblank)
-    TYPE : TSP
-    DIMENSION : 575
-    GTSP_SETS : 115
-    EDGE_WEIGHT_TYPE : EUC_2D
-    NODE_COORD_SECTION
+    Convert a conquer graph to a GTSP (graph, clusters).
 
     >>> import random
     >>> random.seed(3)
@@ -193,24 +187,45 @@ def conquer_to_gtsp(G):
     >>> len(clusters)
     928
     """
+    high_edge_weight = int(high_edge_weight)
     N = len(G)
     dist = dict(nx.floyd_warshall(G))
     G_gtsp = nx.Graph()
-    G_gtsp.add_nodes_from(range(N))
+    G_gtsp.add_nodes_from(range(2 * N))
     for u, v in itertools.product(range(N), range(N)):
         if u >= v:
             continue
         w = dist[u][v] + (G.nodes[u]['weight'] + G.nodes[v]['weight']) / 2
-        # w *= 1e2 # TODO
+        w *= 1e2 # TODO CONSIDER THIS RANGE
         w = int(w)
-        G_gtsp.add_edge(u, v, weight=w)
+        G_gtsp.add_edge(u, v, weight=w) # Normal traversal edge.
+        G_gtsp.add_edge(u + N, v, weight=w) # Capture u, go to v edge.
+        G_gtsp.add_edge(u, v + N, weight=w) # Capture v, go to u edge.
+        G_gtsp.add_edge(u + N, v + N, weight=high_edge_weight) # Non-traversable edge.
     
-    clusters = [ set((u, v)) for u, v in G.edges() ]
+    clusters = []
+    for u in range(N):
+        # Conquer edge
+        G_gtsp.add_edge(u, N + u, weight=G.nodes[u]['weight'])
+        # Conquer neighbor set.
+        neighbor_set = seq(G.neighbors(u)).map(lambda n: n + N).to_set()
+        clusters.append(neighbor_set) # Conquer neighbor set.
+        clusters.append(neighbor_set | { u }) # Including current vertex.
     
     return G_gtsp, clusters
+
         
 def output_gtsp(output, G, clusters, name='unnamed'):
-    output.write('NAME: ' + str(name) + '\n')
+    """
+    NAME : rat575
+    COMMENT : Rattled grid (Pulleyblank)
+    TYPE : TSP
+    DIMENSION : 575
+    GTSP_SETS : 115
+    EDGE_WEIGHT_TYPE : EUC_2D
+    NODE_COORD_SECTION
+    """
+    output.write('NAME: ' + re.sub(r'\W', '_', str(name)) + '\n')
     output.write('COMMENT: ' + ' auto generated ' + name + '\n')
     output.write('TYPE: TSP\n')
     output.write('DIMENSION: ' + str(len(G)) + '\n')
