@@ -3,7 +3,9 @@ from functional import seq
 import networkx as nx
 from networkx.utils import pairwise
 import gen
+import re
 import gtsp
+import writer
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
 import kingdom_utils as k_utils
@@ -108,7 +110,7 @@ def solve_cds_christofides(G, cds_fn):
     # christofides
     # all pairs shortest dist graph (of original)
     pred, dist, path = g_utils.floyd_warshall_all(G)
-    
+
     # construct CDS tree
     G_tree = g_utils.minimum_connected_subset_spanning_tree(G, cds)
 
@@ -164,7 +166,7 @@ def solve_cds_christofides(G, cds_fn):
         ds.remove(to_remove)
         stops.remove(to_remove)
 
-    
+
     tour = seq(pairwise(stops + [ stops[0] ])) \
             .flat_map(lambda e: path(e[0], e[1])) \
             .to_list()
@@ -192,14 +194,52 @@ rand.seed(0)
 from baf14st70 import G, clusters, tour
 
 G = gtsp.gtsp_to_conquer(G, clusters)
-
+print len(G)
+writer.scale(G)
 for _, _, data in G.edges(data=True):
     data['weight'] += 0.00004
 
 print('known solution')
 tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
 print_solution_info(G, tour, ds)
+
+writer.writeInFile("set200", tour[0], G)
+writer.writeOutFile("set200", tour, ds)
 ###
+
+# file = open("att48_xy.txt","r")
+# filelines = file.readlines()
+# print(filelines)
+# pos = [map(lambda x: int(x), re.split("\s+", line[:-1].strip())) for line in filelines]
+# print(pos)
+# G = nx.Graph()
+# file.close()
+# file = open("att48_s.txt","r")
+# filelines = file.readlines()
+# prev = None
+# weight = 0.0
+# file.close()
+# for i in range(0, len(pos) - 1):
+#     for j in range(i + 1, len(pos)):
+#         w = ((pos[i][0] - pos[j][0])*(pos[i][0] - pos[j][0]) + \
+#         (pos[i][1] - pos[j][1])*(pos[i][1] - pos[j][1]))**0.5
+#         G.add_edge(i, j, weight = w)
+
+
+
+# for line in filelines:
+#     curr = int(line)
+#     if curr and prev:
+#         w = ((pos[curr - 1][0] - pos[prev - 1][0])*(pos[curr - 1][0] - pos[prev - 1][0]) + \
+#         (pos[curr - 1][1] - pos[prev - 1][1])*(pos[curr - 1][1] - pos[prev - 1][1]))**0.5
+#         weight += w
+#         print(w)
+#         G.add_edge(curr, prev, weight = w)
+#     prev = curr
+# clusters = [[i] for i in range(0, len(pos))]
+#G = gtsp.gtsp_to_conquer(G, clusters)
+
+
 
 #G = gen.random_graph_trick_nodes(200, 2, 0.02)
 # G = gen.trapezoid_1()
@@ -252,4 +292,3 @@ for dominating_set_fn in dominating_set_fns:
         print('{} {} {} {}'.format(count, solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__))
         tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn)
         print_solution_info(G, tour, ds)
-

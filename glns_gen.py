@@ -69,9 +69,10 @@ if __name__ == "__main__":
         G_gtsp, clusters = gtspify_graph(G)
         with open('glns_gen.txt', 'w+') as output_file:
             gtsp.output_gtsp(output_file, G_gtsp, clusters, name='glns_gen')
-        writer.writeGraphFile('glns_oggraph.txt', 0, G)
+        writer.writeInFile('glns_oggraph.txt', 0, G)
+
     elif 'path' == args.type:
-        G, start = writer.readGraphFile('glns_oggraph.txt')
+        G, start = writer.readInFile('glns_oggraph.txt')
         tour_gtsp = [2, 21, 5, 23, 22, 12, 18, 19, 16, 3, 6, 24, 7]
         # CONVERT STEP
         _, dist, path = g_utils.floyd_warshall_all(G)
