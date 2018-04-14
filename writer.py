@@ -9,11 +9,18 @@ from networkx.utils import pairwise
 import skeleton.utils as utils
 import skeleton.student_utils_sp18 as s_utils
 
-def readGraph(name):
-    input_data = utils.read_file(name)
+def readInFile(name):
+    input_data = utils.read_file(name + '.in')
     number_of_kingdoms, list_of_kingdom_names, starting_kingdom, adjacency_matrix = s_utils.data_parser(input_data)
     G = s_utils.adjacency_matrix_to_graph(adjacency_matrix)
+    # G = nx.relabel_nodes(G, { n: int(n) for n in G.nodes }, copy=True)
     return G, list_of_kingdom_names.index(starting_kingdom)
+
+def readOutFile(name):
+    with open(name + '.out', 'r') as f:
+        tour = list(map(int, f.readline().strip().split()[:-1]))
+        ds = set(map(int, f.readline().strip().split()))
+        return tour, ds
 
 def writeInFile(name, start, G): #name : String, start : String, G : networkx
     f = open( name + ".in","w+")
@@ -34,7 +41,6 @@ def writeInFile(name, start, G): #name : String, start : String, G : networkx
         f.write("\n")
     f.close()
 
-
 def writeOutFile(name, tour, ds):
     f = open(name + ".out", "w+")
     for n in tour:
@@ -53,7 +59,6 @@ def generateAndWriteFiles(posf, sf, name):
     pos = [map(lambda x: int(x), re.split("\s+", line[:-1].strip())) for line in filelines]
     print(pos)
     G = nx.Graph()
-
     file = sf
     filelines = file.readlines()
     file.close()

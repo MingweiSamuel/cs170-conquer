@@ -9,15 +9,15 @@ import gtsp
 import graph_utils as g_utils
 import writer
 
-def gtspify_graph(G):
+def make_clusters(G):
 
     dist = dict(nx.floyd_warshall(G))
 
     N = len(G)
-    G_gtsp = nx.Graph()
-    G_gtsp.add_nodes_from(range(N))
-    for u, v in itertools.product(range(N), range(N)):
-        G_gtsp.add_edge(u, v, weight=dist[u][v])
+    # G_gtsp = nx.Graph()
+    # G_gtsp.add_nodes_from(range(N))
+    # for u, v in itertools.product(range(N), range(N)):
+    #     G_gtsp.add_edge(u, v, weight=dist[u][v])
     
     clusters = []
     nodes = list(range(N))
@@ -47,7 +47,7 @@ def gtspify_graph(G):
     
     print([ len(c) for c in clusters ])
 
-    return G_gtsp, clusters
+    return clusters
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parsing arguments')
@@ -60,22 +60,77 @@ if __name__ == "__main__":
         from datetime import datetime
         rand.seed(datetime.now())
 
-        G = gen.random_connected_graph(25, 10, 0.8)
+        N = 25
+        G = gen.random_connected_graph(N, 10, 1)
+
+        for u, v in itertools.product(range(N), range(N)):
+            if not G.has_edge(u, v):
+                G.add_edge(u, v, weight=int(1e7))
+
         for _, _, data in G.edges(data=True):
             data['weight'] = int(data['weight']) + 1
         for _, data in G.nodes(data=True):
             data['weight'] = int(data['weight'])
+            
+        clusters = make_clusters(G)
+        print(repr(clusters))
 
-        G_gtsp, clusters = gtspify_graph(G)
+        dist = dict(nx.floyd_warshall(G))
+
+
+        G_metric = G.copy()
+        for u, v, data in G_metric.edges(data=True):
+            data['weight'] = dist[u][v]
         with open('glns_gen.txt', 'w+') as output_file:
-            gtsp.output_gtsp(output_file, G_gtsp, clusters, name='glns_gen')
-        writer.writeInFile('glns_oggraph.txt', 0, G)
+            gtsp.output_gtsp(output_file, G_metric, clusters, name='glns_gen')
+
+        writer.writeInFile('glns_oggraph', 0, G)
+
 
     elif 'path' == args.type:
-        G, start = writer.readInFile('glns_oggraph.txt')
-        tour_gtsp = [2, 21, 5, 23, 22, 12, 18, 19, 16, 3, 6, 24, 7]
+        G, _ = writer.readInFile('glns_oggraph')
+
+        # CHANGE THIS LINE
+        clusters = \
+            [[18, 7, 8, 9, 23], [6, 11, 17], [14, 1], [21, 13, 16], [5, 2], [15], [12], [24], [22], [4], [0], [20], [3], [19], [10]]
+        clusters = [ set(c) for c in clusters ]
+
+        # RUN
+        # julia GLNS/GLNScmd.jl glns_gen.txt -max_time=10 -trials=500
+
+        # CHANGE THIS LINE
+        tour_gtsp = [5, 20, 2, 11, 1, 3, 4, 25, 23, 21, 9, 16, 13, 17, 18]
+        tour_gtsp = [ n - 1 for n in tour_gtsp ]
+
+
         # CONVERT STEP
         _, dist, path = g_utils.floyd_warshall_all(G)
+
+        G = gtsp.gtsp_to_conquer(G, clusters)
+        tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour_gtsp)
+
+
+        G_fix = G.copy()
+        to_remove = []
+        for u, v, data in G_fix.edges(data=True):
+            if data['weight'] >= 1e7:
+                print('removing ' + str((u, v)))
+                to_remove.append((u, v))
+        G_fix.remove_edges_from(to_remove)
+
+
+        # FIX
+        pred, dist, path = g_utils.floyd_warshall_all(G_fix)
+        tour = g_utils.stops_to_tour(tour, path)
+
+        gen.check(G_fix)
+        writer.writeInFile('glns_newg_graph', tour[0], G_fix)
+        writer.writeOutFile('glns_newg_graph', tour + [ tour[0] ], ds)
+
+        print(tour, ds)
+
+        # VALIDATE: python skeleton/output_validator.py glns_newg_graph.in glns_newg_graph.out
+
     else:
         print('Unknown: ' + args.type)
 

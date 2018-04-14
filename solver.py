@@ -184,6 +184,7 @@ def print_solution_info(G, tour, ds):
     print('Tour Len: {}, DS Len: {}'.format(len(tour), len(ds)))
     print(tour, ds)
     print()
+    return cost_total
 
 ###
 
@@ -191,20 +192,6 @@ rand.seed(0)
 
 
 ###
-from baf14st70 import G, clusters, tour
-
-G = gtsp.gtsp_to_conquer(G, clusters)
-print len(G)
-writer.scale(G)
-for _, _, data in G.edges(data=True):
-    data['weight'] += 0.00004
-
-print('known solution')
-tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
-print_solution_info(G, tour, ds)
-
-writer.writeInFile("set200", tour[0], G)
-writer.writeOutFile("set200", tour, ds)
 ###
 
 # file = open("att48_xy.txt","r")
@@ -248,7 +235,6 @@ writer.writeOutFile("set200", tour, ds)
 #     G, clusters = gtsp.read_text_gtsp(f)
 # G = gtsp.gtsp_to_conquer(G, clusters)
 
-gen.check(G)
 
 
 # with open('gtsp/11eil51.solution.txt') as f:
@@ -261,34 +247,66 @@ gen.check(G)
 
 
 
-count = 0
 
+if __name__ == '__main__':
+    from baf14st70 import G, clusters, tour
 
-cds_fns = [
-    make_greedy_sub_cds_fn(value_fn) for value_fn in value_fns
-]
-for cds_fn in cds_fns:
-    count += 1
-    print('{} {} {}'.format(count, solve_cds_christofides.__name__, cds_fn.__name__))
-    tour, ds = solve_cds_christofides(G, cds_fn)
+    G = gtsp.gtsp_to_conquer(G, clusters)
+    print(len(G))
+    writer.scale(G)
+    for _, _, data in G.edges(data=True):
+        data['weight'] += 0.00004
+
+    print('known solution')
+    tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
     print_solution_info(G, tour, ds)
 
+    writer.writeInFile("set200", tour[0], G)
+    writer.writeOutFile("set200", tour, ds)
+
+    gen.check(G)
 
 
-dominating_set_fns = [
-    greedy_additive_dominating_set
-]
-dominating_set_fns.extend([ make_greedy_sub_ds_fn(value_fn) for value_fn in value_fns ])
+    #
+    run_everything(G)
 
-tour_fns = [
-    greedy_tour,
-    g_utils.christofides_tour,
-    g_utils.nearest_detour_tour,
-]
 
-for dominating_set_fn in dominating_set_fns:
-    for tour_fn in tour_fns:
+def run_everything(G):
+    count = 0
+    costs = []
+    cds_fns = [
+        make_greedy_sub_cds_fn(value_fn) for value_fn in value_fns
+    ]
+    for cds_fn in cds_fns:
         count += 1
-        print('{} {} {} {}'.format(count, solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__))
-        tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn)
-        print_solution_info(G, tour, ds)
+        s = '{} {} {}'.format(count, solve_cds_christofides.__name__, cds_fn.__name__)
+        print(s)
+        tour, ds = solve_cds_christofides(G, cds_fn)
+        c = print_solution_info(G, tour, ds)
+        costs.append((c, s))
+
+
+
+    dominating_set_fns = [
+        greedy_additive_dominating_set
+    ]
+    dominating_set_fns.extend([ make_greedy_sub_ds_fn(value_fn) for value_fn in value_fns ])
+
+    tour_fns = [
+        greedy_tour,
+        g_utils.christofides_tour,
+        g_utils.nearest_detour_tour,
+    ]
+
+    for dominating_set_fn in dominating_set_fns:
+        for tour_fn in tour_fns:
+            count += 1
+            s = '{} {} {} {}'.format(count, solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__)
+            print(s)
+            tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn)
+            c = print_solution_info(G, tour, ds)
+            costs.append((c, s))
+
+    costs.sort(key=lambda t: t[0])
+    print('\n'.join(map(str, costs)))
+    
