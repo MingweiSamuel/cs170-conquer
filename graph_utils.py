@@ -183,3 +183,7 @@ def floyd_warshall_all_multi(G, weight='weight'):
                 .flat_map(lambda nu: all_paths(nu, v)) \
                 .map(lambda path: [ u ] + path)
     return dict(pred), dict(dist), all_paths
+
+def string_label(G):
+    G_str = nx.relabel_nodes(G, { v: str(v) for v in G }, copy=True)
+    return G_str

@@ -5,6 +5,7 @@ import networkx as nx
 from functional import seq
 
 import skeleton.student_utils_sp18 as s_utils
+import graph_utils as g_utils
 import kingdom_utils as k_utils
 
 # converting to and from GTSP problems.
@@ -173,46 +174,92 @@ def gtsp_to_conquer_solution(clusters, tour):
     return new_tour, ds
 
 # Convert conquer to GTSP
-def conquer_to_gtsp(G, high_edge_weight=1e8):
+def conquer_to_gtsp(G_str, start):
     """
-    Convert a conquer graph to a GTSP (graph, clusters).
+    Convert a str-labelled conquer graph G(V, E) to a GTSP graph G'(V', E') with |V'| = 2|V| + 2|E|.
 
     >>> import random
     >>> random.seed(3)
     >>> import gen
-    >>> G = gen.random_graph(100, 5, 0.1)
-    >>> G, clusters = conquer_to_gtsp(G)
+    >>> G = gen.random_connected_graph(200, 10, 0.01)
+    >>> G, clusters, ids, _ = conquer_to_gtsp(G, 0)
     >>> len(G)
-    100
-    >>> len(clusters)
-    928
+    1230
+    >>> len(clusters) # |V| + 2
+    202
     """
-    high_edge_weight = int(high_edge_weight)
-    N = len(G)
-    dist = dict(nx.floyd_warshall(G))
-    G_gtsp = nx.Graph()
-    G_gtsp.add_nodes_from(range(2 * N))
-    for u, v in itertools.product(range(N), range(N)):
-        if u >= v:
-            continue
-        w = dist[u][v] + (G.nodes[u]['weight'] + G.nodes[v]['weight']) / 2
-        w *= 1e2 # TODO CONSIDER THIS RANGE
-        w = int(w)
-        G_gtsp.add_edge(u, v, weight=w) # Normal traversal edge.
-        G_gtsp.add_edge(u + N, v, weight=w) # Capture u, go to v edge.
-        G_gtsp.add_edge(u, v + N, weight=w) # Capture v, go to u edge.
-        G_gtsp.add_edge(u + N, v + N, weight=high_edge_weight) # Non-traversable edge.
+    start = str(start)
+
+    G_aug = nx.Graph()
+    G_aug.add_nodes_from(G_str.nodes())
+
+    for v in G_str:
+        G_aug.add_node(v + '_*')
+        G_aug.add_edge(v, v + '_*', weight=G_str.nodes[v]['weight'] / 2)
     
-    clusters = []
-    for u in range(N):
-        # Conquer edge
-        G_gtsp.add_edge(u, N + u, weight=G.nodes[u]['weight'])
-        # Conquer neighbor set.
-        neighbor_set = seq(G.neighbors(u)).map(lambda n: n + N).to_set()
-        clusters.append(neighbor_set) # Conquer neighbor set.
-        clusters.append(neighbor_set | { u }) # Including current vertex.
+    clusters = [ { start }, set(G_str.nodes()) - { start } ]
+
+    for v in G_str:
+        v_cluster = { v + '_*' }
+
+        for u in G_str.neighbors(v):
+            r = u + '_' + v
+            v_cluster.add(r)
+
+            G_aug.add_node(r)
+            G_aug.add_edge(u + '_*', r, weight=0)
+
+        clusters.append(v_cluster)
+
+
+    _, og_dist, og_path = g_utils.floyd_warshall_all(G_str)
+    # og_dist = dict(nx.floyd_warshall(G_str))
+    def tran(u, v):
+        us = u.split('_')
+        vs = v.split('_')
+        return us, us[0], vs, vs[0]
+    def dist(u, v):
+        us, u0, vs, v0 = tran(u, v)
+        if u0 == v0:
+            return 0
+        d = og_dist[u0][v0]
+        if len(us) > 1:
+            d += G_aug[u0][u0 + '_*']['weight']
+        if len(vs) > 1:
+            d += G_aug[v0][v0 + '_*']['weight']
+        return d
+
+    G_full = nx.Graph()
+    G_full.add_nodes_from(G_aug.nodes())
+
+    for u, v in itertools.product(G_aug.nodes(), G_aug.nodes()):
+        G_full.add_edge(u, v, weight=dist(u, v))
     
-    return G_gtsp, clusters
+    ids = list(G_full.nodes())
+    return G_full, clusters, ids, og_path
+
+def mapped_gtsp_to_conquer_solution(tour, ids, og_path):
+    tour_ids = seq(tour).map(lambda i: ids[i]).to_list()
+    print(tour_ids)
+
+    ds = set()
+    stops = []
+    for v in tour_ids:
+        vs = v.split('_')
+        v0 = vs[0]
+        if len(vs) > 1:
+            ds.add(v0)
+        if not stops or stops[-1] != v0:
+            stops.append(v0)
+    
+    print(stops)
+    tour = g_utils.stops_to_tour(stops, og_path)
+
+    tour = seq(tour).map(int).to_list()
+    ds = seq(ds).map(int).to_set()
+    
+    return tour, ds
+
 
         
 def output_gtsp(output, G, clusters, name='unnamed'):
@@ -233,17 +280,19 @@ def output_gtsp(output, G, clusters, name='unnamed'):
     output.write('EDGE_WEIGHT_TYPE: EXPLICIT\n')
     output.write('EDGE_WEIGHT_FORMAT: LOWER_DIAG_ROW\n')
     output.write('EDGE_WEIGHT_SECTION:\n')
+    ids = list(G.nodes())
     for u in range(len(G)):
         for v in range(u + 1):
             if u == v:
-                output.write('0')
+                output.write('0     ')
             else:
-                output.write(str(G[u][v]['weight']))
+                s = str(G[ids[u]][ids[v]]['weight'])
+                output.write(f'{s: <5}')
             output.write(' ')
         output.write('\n')
     output.write('GTSP_SET_SECTION:\n')
     for i, cluster in enumerate(clusters):
         # Add 1 to clusters because of 1-indexing.
-        row = [ str(i + 1) ] + seq(cluster).map(lambda n: n + 1).map(str).to_list() + [ '-1\n' ]
+        row = [ str(i + 1) ] + seq(cluster).map(lambda v: ids.index(v)).map(lambda n: n + 1).map(str).to_list() + [ '-1\n' ]
         output.write(' '.join(row))
     output.write('EOF\n')
