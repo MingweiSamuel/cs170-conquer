@@ -196,8 +196,10 @@ def conquer_to_gtsp(G_str, start):
     for v in G_str:
         G_aug.add_node(v + '_*')
         G_aug.add_edge(v, v + '_*', weight=G_str.nodes[v]['weight'] / 2)
+    G_aug.add_node('start')
+    G_aug.add_edge('start', start, weight=0)
     
-    clusters = [ { start }, set(G_str.nodes()) - { start } ]
+    clusters = [ { 'start' }, set(G_str.nodes()) ]
 
     for v in G_str:
         v_cluster = { v + '_*' }
@@ -215,6 +217,10 @@ def conquer_to_gtsp(G_str, start):
     _, og_dist, og_path = g_utils.floyd_warshall_all(G_str)
     # og_dist = dict(nx.floyd_warshall(G_str))
     def tran(u, v):
+        if u == 'start':
+            u = start
+        if v == 'start':
+            v = start
         us = u.split('_')
         vs = v.split('_')
         return us, us[0], vs, vs[0]
@@ -238,13 +244,16 @@ def conquer_to_gtsp(G_str, start):
     ids = list(G_full.nodes())
     return G_full, clusters, ids, og_path
 
-def mapped_gtsp_to_conquer_solution(tour, ids, og_path):
+def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
+    start = str(start)
     tour_ids = seq(tour).map(lambda i: ids[i]).to_list()
-    print(tour_ids)
+    # print(tour_ids)
 
     ds = set()
     stops = []
     for v in tour_ids:
+        if v == 'start': # Special case for start
+            v = start
         vs = v.split('_')
         v0 = vs[0]
         if len(vs) > 1:
@@ -252,7 +261,7 @@ def mapped_gtsp_to_conquer_solution(tour, ids, og_path):
         if not stops or stops[-1] != v0:
             stops.append(v0)
     
-    print(stops)
+    # print(stops)
     tour = g_utils.stops_to_tour(stops, og_path)
 
     tour = seq(tour).map(int).to_list()

@@ -1,3 +1,4 @@
+import random
 import subprocess
 import ast
 
@@ -7,10 +8,10 @@ def run(G_gtsp, clusters, timeout=10):
     """
     G: gtsp graph (complete).
     """
-    path = 'GLNS/inputs/temp_interface.txt'
+    path = 'GLNS/inputs/temp_interface_{}.txt'.format(random.randint(0, int(1e9)))
     with open(path, 'w+') as output_file:
         gtsp.output_gtsp(output_file, G_gtsp, clusters, name='temp_interface')
-    stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=100000')
+    stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
     lines = stdoutdata.split('\n')
     for line in lines:
         if line.startswith('Cost'):

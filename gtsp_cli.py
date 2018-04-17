@@ -4,30 +4,47 @@ import networkx as nx
 from networkx.algorithms import approximation as nx_apx
 
 import gtsp
+import writer
 import gen
 import glns_interface
 import solver
 import graph_utils as g_utils
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser(description='Parsing arguments')
+    parser = argparse.ArgumentParser(description='Parsing arguments')
     # parser.add_argument('--all', action='store_true', help='If specified, the input validator is run on all files in the input directory. Else, it is run on just the given input file')
-    # parser.add_argument('output', type=str, help='The path to the output file')
+    parser.add_argument('input', nargs='?', type=str, help='The path to the input file')
+    parser.add_argument('--glns_timeout', help='Timeout for GLNS', type=int)
     # parser.add_argument('params', nargs=argparse.REMAINDER, help='Extra arguments passed in')
-    # args = parser.parse_args()
+    args = parser.parse_args()
+    timeout = 30
+    if args.glns_timeout:
+        timeout = args.glns_timeout
 
-    G = gen.random_connected_graph(200, 50, 0.2)
+    if args.input:
+        print('loading {}.in ...'.format(args.input))
+        G, start = writer.readInFile(args.input)
+    else:
+        print('making random input...')
+        G = gen.random_connected_graph(100, 50, 0.1)
+        start = 0
+
+    print('start: {}'.format(start))
+    
     G_str = g_utils.string_label(G)
 
-    G_gtsp, clusters, ids, og_path = gtsp.conquer_to_gtsp(G_str, 0)
+    G_gtsp, clusters, ids, og_path = gtsp.conquer_to_gtsp(G_str, start)
     for _, _, data in G_gtsp.edges(data=True):
-        data['weight'] = int(100 * data['weight'])
-    tour_gtsp = glns_interface.run(G_gtsp, clusters, timeout=120)
-    tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, ids, og_path)
+        data['weight'] = int(1e5 * data['weight']) # TODO smart scaling?
+    tour_gtsp = glns_interface.run(G_gtsp, clusters, timeout=timeout)
+    tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
     # print(tour, ds)
     print()
 
     print('GLNS')
     solver.print_solution_info(G, tour, ds)
+    print()
 
-    solver.run_everything(G)
+    s_tour, s_ds = solver.run_everything(G, start=start, debug=False)
+    print('greedy')
+    solver.print_solution_info(G, s_tour, s_ds)

@@ -26,13 +26,16 @@ def is_connected_subset(G, nodes):
 def minimum_connected_subset_spanning_tree(G, nodes, **kwargs):
     return nx.minimum_spanning_tree(subgraph(G, nodes), **kwargs)
 
-def nearest_detour_tour(G, nodes):
+def nearest_detour_tour(G, nodes, start=None):
     nodes = list(nodes)
     pred, dist, path = floyd_warshall_all(G)
 
     nodes_left = set(nodes)
-    stops = [ rand.choice(nodes) ]
-    nodes_left.remove(stops[0])
+    if start is None:
+        stops = [ rand.choice(nodes) ]
+        nodes_left.remove(stops[0])
+    else:
+        stops = [ start ]
 
     # best = lambda n: seq(range(len(stops))) \
     #         .map(lambda i: (i, dist[stops[i - 1]][n])) \
@@ -52,7 +55,7 @@ def nearest_detour_tour(G, nodes):
     return tour
         
 
-def christofides_tour(G, nodes):
+def christofides_tour(G, nodes, start=None):
     # christofides
     # all pairs shortest dist graph (of original)
     pred, dist, path = floyd_warshall_all(G)
@@ -100,8 +103,20 @@ def christofides_tour(G, nodes):
     # TODO smart cutting short
     stops = remove_dupes(stops)
 
+    stops = insert_start_into_stops(stops, dist, path, start)
+
     tour = stops_to_tour(stops, path)
     return tour
+
+def insert_start_into_stops(stops, dist, path, start):
+    stops = stops[:]
+    if start in stops:
+        return stops
+    i, e = seq(pairwise([ stops[0] ] + stops)) \
+            .enumerate() \
+            .min_by(lambda p: dist[p[1][0]][start] + dist[start][p[1][1]])
+    stops.insert(i, start)
+    return stops
 
 def stops_to_tour(stops, path):
     return seq(pairwise(stops + [ stops[0] ])) \
