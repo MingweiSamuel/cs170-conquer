@@ -26,9 +26,12 @@ def is_connected_subset(G, nodes):
 def minimum_connected_subset_spanning_tree(G, nodes, **kwargs):
     return nx.minimum_spanning_tree(subgraph(G, nodes), **kwargs)
 
-def nearest_detour_tour(G, nodes, start=None):
+def nearest_detour_tour(G, nodes, start=None, all_paths=None):
     nodes = list(nodes)
-    pred, dist, path = floyd_warshall_all(G)
+    if all_paths:
+        pred, dist, path = all_paths
+    else:
+        pred, dist, path = floyd_warshall_all(G)
 
     nodes_left = set(nodes)
     if start is None:
@@ -55,10 +58,13 @@ def nearest_detour_tour(G, nodes, start=None):
     return tour
         
 
-def christofides_tour(G, nodes, start=None):
+def christofides_tour(G, nodes, start=None, all_paths=None):
     # christofides
     # all pairs shortest dist graph (of original)
-    pred, dist, path = floyd_warshall_all(G)
+    if all_paths:
+        pred, dist, path = all_paths
+    else:
+        pred, dist, path = floyd_warshall_all(G)
     
     G_full = nx.Graph()
     G_full.add_nodes_from(nodes)

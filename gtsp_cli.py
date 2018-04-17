@@ -26,24 +26,26 @@ if __name__ == '__main__':
         G, start = writer.readInFile(args.input)
     else:
         print('making random input...')
-        G = gen.random_connected_graph(100, 50, 0.1)
+        G = gen.random_connected_graph(200, 50, 0.1)
         start = 0
 
     print('start: {}'.format(start))
     
-    G_str = g_utils.string_label(G)
+    if False:
+        G_str = g_utils.string_label(G)
 
-    G_gtsp, clusters, ids, og_path = gtsp.conquer_to_gtsp(G_str, start)
-    for _, _, data in G_gtsp.edges(data=True):
-        data['weight'] = int(1e5 * data['weight']) # TODO smart scaling?
-    tour_gtsp = glns_interface.run(G_gtsp, clusters, timeout=timeout)
-    tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
-    # print(tour, ds)
-    print()
+        G_gtsp, clusters, ids, og_path = gtsp.conquer_to_gtsp(G_str, start)
+        print('done transforming problem')
+        for _, _, data in G_gtsp.edges(data=True):
+            data['weight'] = int(1e5 * data['weight']) # TODO smart scaling?
+        tour_gtsp = glns_interface.run(G_gtsp, clusters, timeout=timeout)
+        tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
+        # print(tour, ds)
+        print()
 
-    print('GLNS')
-    solver.print_solution_info(G, tour, ds)
-    print()
+        print('GLNS')
+        solver.print_solution_info(G, tour, ds)
+        print()
 
     s_tour, s_ds = solver.run_everything(G, start=start, debug=False)
     print('greedy')

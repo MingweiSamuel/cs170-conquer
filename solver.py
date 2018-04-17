@@ -44,9 +44,12 @@ def make_greedy_sub_ds_fn(value_fn):
     return greedy_sub_ds_fn
 
 
-def greedy_tour(G, ds, start=None):
+def greedy_tour(G, ds, start=None, all_paths=None):
     # first get shortest paths
-    pred, dist, path = g_utils.floyd_warshall_all(G)
+    if all_paths:
+        pred, dist, path = all_paths
+    else:
+        pred, dist, path = g_utils.floyd_warshall_all(G)
 
     tour = []
     unreached = set(ds)
@@ -69,11 +72,11 @@ def greedy_tour(G, ds, start=None):
 
     return tour
 
-def solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=None):
+def solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=None, all_paths=None):
     ds = dominating_set_fn(G)
     if not nx.is_dominating_set(G, ds):
         raise Exception('fn failed to make dominating set')
-    tour = tour_fn(G, ds, start=start)
+    tour = tour_fn(G, ds, start=start, all_paths=all_paths)
     # BAD TOUR
     k_utils.check(G, tour, ds)
 
@@ -108,7 +111,7 @@ def make_greedy_sub_cds_fn(value_fn):
 
 
 
-def solve_cds_christofides(G, cds_fn, start=None):
+def solve_cds_christofides(G, cds_fn, start=None, all_paths=None):
     cds = cds_fn(G)
     if not nx.is_dominating_set(G, cds) or \
             not g_utils.is_connected_subset(G, cds):
@@ -116,7 +119,10 @@ def solve_cds_christofides(G, cds_fn, start=None):
 
     # christofides
     # all pairs shortest dist graph (of original)
-    pred, dist, path = g_utils.floyd_warshall_all(G)
+    if all_paths:
+        pred, dist, path = all_paths
+    else:
+        pred, dist, path = g_utils.floyd_warshall_all(G)
 
     # construct CDS tree
     G_tree = g_utils.minimum_connected_subset_spanning_tree(G, cds)
@@ -283,6 +289,9 @@ if __name__ == '__main__':
 
 
 def run_everything(G, start=0, debug=True):
+
+    all_paths = g_utils.floyd_warshall_all(G)
+
     count = 0
     costs = []
     cds_fns = [
@@ -293,7 +302,7 @@ def run_everything(G, start=0, debug=True):
         s = '{} {} {}'.format(count, solve_cds_christofides.__name__, cds_fn.__name__)
         if debug:
             print(s)
-        tour, ds = solve_cds_christofides(G, cds_fn, start=start)
+        tour, ds = solve_cds_christofides(G, cds_fn, start=start, all_paths=all_paths)
         c = print_solution_info(G, tour, ds, debug=debug)
         costs.append((c, s, tour, ds))
 
@@ -316,7 +325,7 @@ def run_everything(G, start=0, debug=True):
             s = '{} {} {} {}'.format(count, solve_dominating_set_then_tsp.__name__, dominating_set_fn.__name__, tour_fn.__name__)
             if debug:
                 print(s)
-            tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=start)
+            tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=start, all_paths=all_paths)
             c = print_solution_info(G, tour, ds, debug=debug)
             costs.append((c, s, tour, ds))
 
