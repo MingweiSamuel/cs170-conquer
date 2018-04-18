@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
 
     elif 'path' == args.type:
-        G, _ = writer.readInFile('glns_oggraph')
+        G, _, _ = writer.readInFile('glns_oggraph')
 
         # CHANGE THIS LINE
         clusters = \

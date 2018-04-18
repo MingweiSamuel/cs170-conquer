@@ -3,6 +3,7 @@ import os
 import networkx as nx
 from functional import seq
 
+import solver
 import writer
 import kingdom_utils as k_utils
 
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     too_big = []
     biggest_size = 0
     biggest = ''
+    time_est = 0
 
     sizes = [ [] for _ in range(30) ]
 
@@ -64,20 +66,23 @@ if __name__ == '__main__':
         size = len(G) + len(G.edges)
 
         if len(degrees) == 1:
+            time_est += 30
             complete.append(fn)
-        elif len(degrees) == 2:
-            if degrees[0][1] == degrees[1][1]:
-                # print(degrees, fn)
-                tsp.append(fn)
-        elif size > 1000:
+
+        elif k_utils.is_transformed_tsp(G):
+            time_est += 15 + len(G)
+            tsp.append(fn)
+
+        elif size > solver.MAX_SIZE:
+            time_est += 100 # Without GLNS
+
             too_big.append(fn)
             if size > biggest_size:
                 biggest_size = size
                 biggest = fn
 
-        if k_utils.is_transformed_tsp(G):
-            k_utils.transform_tsp_to_conquer(G)
-            # print(degrees, fn)
+        else: # Normal, with GLNS
+            time_est += 100 + size
         
         index = size // 100
         index = min(index, len(sizes) - 1)
@@ -87,4 +92,6 @@ if __name__ == '__main__':
     print('tsp: {}\n{}'.format(len(tsp), tsp))
     print('too_big: {}\n{}'.format(len(too_big), too_big))
     print('biggest: {} {}'.format(biggest_size, biggest))
-    print(sizes[18])
+    print('time_est: {}'.format(time_est))
+    #print(sizes[18])
+    

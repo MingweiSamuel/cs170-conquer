@@ -205,21 +205,22 @@ def solve_complete(G, start):
         return [ start ], { start }
     return [ start, best ], { best }
 
-def solve_using_glns(G, start, timeout=None):
+def solve_using_glns(G, start, timeout=None, complexity=1):
     G_str = g_utils.string_label(G)
 
     dist, ids, clusters, og_path = gtsp.conquer_to_gtsp(G_str, start)
 
     # timeout: size / 2
     if timeout is None:
-        timeout = int(15 + (len(G) + len(G.edges)) / 2)
+        timeout = 5 + len(G) + len(G.edges)
+        timeout = max(1, int(complexity * timeout))
 
     tour_gtsp = glns_interface.run(dist, ids, clusters, timeout)
     # print(tour_gtsp)
     tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
     return tour, ds
 
-def solve_transformed_tsp_using_glns(G, start, timeout=None):
+def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
     G_tsp, ids, dangling_dict = k_utils.untransform_tsp(G)
     clusters = set(G_tsp.nodes())
 
@@ -228,6 +229,7 @@ def solve_transformed_tsp_using_glns(G, start, timeout=None):
 
     if timeout == None:
         timeout = len(G_tsp)
+        timeout = max(1, int(complexity * timeout))
     tour_tsp = glns_interface.run(dist, ids, clusters, timeout)
 
     def should_capture_dangling(v):
@@ -343,8 +345,8 @@ def run_all_greedy(G, start=0, debug=True):
 
 
 # Max size (V+E) to run GLNS on a graph.
-MAX_SIZE = 2250
-def solve(G, start, debug=False):
+MAX_SIZE = 1000 #2250
+def solve(G, start, debug=False, complexity=1):
     size = len(G) + len(G.edges)
     best = None
     best_cost = float('inf')
@@ -356,13 +358,13 @@ def solve(G, start, debug=False):
             best = (tour, ds)
             best_cost = cost
     elif k_utils.is_transformed_tsp(G):
-        tour, ds = solve_transformed_tsp_using_glns(G, start)
+        tour, ds = solve_transformed_tsp_using_glns(G, start, complexity=complexity)
         cost = print_solution_info(G, tour, ds, debug=debug)
         if cost < best_cost:
             best = (tour, ds)
             best_cost = cost
     elif size <= MAX_SIZE:
-        tour, ds = solve_using_glns(G, start) # default timeout
+        tour, ds = solve_using_glns(G, start, complexity=complexity) # default timeout
         cost = print_solution_info(G, tour, ds, debug=debug)
         if cost < best_cost:
             best = (tour, ds)
