@@ -10,6 +10,7 @@ import writer
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
 import kingdom_utils as k_utils
+import glns_interface
 from value_fns import value_fns
 
 
@@ -155,9 +156,12 @@ def solve_cds_christofides(G, cds_fn, start=None, all_paths=None):
     # This doesn't contain all the "bridge" vertices we need for the
     # added "indices". Hence it is called "stops" as in "tour stops"
     # rather than "tour".
-    stops = seq(nx.eulerian_circuit(G_euler)) \
-            .map(lambda e: e[0]) \
-            .to_list()
+    if len(cds) > 1:
+        stops = seq(nx.eulerian_circuit(G_euler)) \
+                .map(lambda e: e[0]) \
+                .to_list()
+    else:
+        stops = list(cds) # singleton or empty
 
     # Add the starting point if it is not added already
     stops = g_utils.insert_start_into_stops(stops, dist, path, start)
@@ -182,11 +186,66 @@ def solve_cds_christofides(G, cds_fn, start=None, all_paths=None):
         ds.remove(to_remove)
         stops.remove(to_remove)
 
+    if len(stops) > 1:
+        tour = seq(pairwise(stops + [ stops[0] ])) \
+                .flat_map(lambda e: path(e[0], e[1])) \
+                .to_list()
+    else:
+        tour = stops[:]
 
-    tour = seq(pairwise(stops + [ stops[0] ])) \
-            .flat_map(lambda e: path(e[0], e[1])) \
+    return tour, ds
+
+def solve_complete(G, start):
+    if not g_utils.is_complete(G):
+        raise Exception('G is not complete')
+    def value(v):
+        return G.nodes[v]['weight'] + 0 if v == start else (2 * G[v][start]['weight'])
+    best = seq(G.nodes).min_by(value)
+    if best == start:
+        return [ start ], { start }
+    return [ start, best ], { best }
+
+def solve_using_glns(G, start, timeout=None):
+    G_str = g_utils.string_label(G)
+
+    dist, ids, clusters, og_path = gtsp.conquer_to_gtsp(G_str, start)
+
+    # timeout: size / 2
+    if timeout is None:
+        timeout = int(15 + (len(G) + len(G.edges)) / 2)
+
+    tour_gtsp = glns_interface.run(dist, ids, clusters, timeout)
+    # print(tour_gtsp)
+    tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
+    return tour, ds
+
+def solve_transformed_tsp_using_glns(G, start, timeout=None):
+    G_tsp, ids, dangling_dict = k_utils.untransform_tsp(G)
+    clusters = set(G_tsp.nodes())
+
+    def dist(u, v):
+        return G_tsp[u][v]['weight']
+
+    if timeout == None:
+        timeout = len(G_tsp)
+    tour_tsp = glns_interface.run(dist, ids, clusters, timeout)
+
+    def should_capture_dangling(v):
+        cost_v = G.nodes[v]['weight']
+        d = dangling_dict[v]
+        cost_d = G[v][d]['weight'] * 2 + G.nodes[d]['weight']
+        return cost_d < cost_v
+    def capture_node(v):
+        if should_capture_dangling(v):
+            return [ v, dangling_dict[v], v ]
+        return [ v ]
+    
+    tour = seq(tour_tsp) \
+            .flat_map(capture_node) \
             .to_list()
-
+    ds = seq(tour_tsp) \
+            .map(lambda v: dangling_dict[v] if should_capture_dangling(v) else v) \
+            .to_set()
     return tour, ds
 
 
@@ -205,60 +264,7 @@ def print_solution_info(G, tour, ds, debug=True):
 
 ###
 
-rand.seed(0)
-
-
-###
-###
-
-# file = open("att48_xy.txt","r")
-# filelines = file.readlines()
-# print(filelines)
-# pos = [map(lambda x: int(x), re.split("\s+", line[:-1].strip())) for line in filelines]
-# print(pos)
-# G = nx.Graph()
-# file.close()
-# file = open("att48_s.txt","r")
-# filelines = file.readlines()
-# prev = None
-# weight = 0.0
-# file.close()
-# for i in range(0, len(pos) - 1):
-#     for j in range(i + 1, len(pos)):
-#         w = ((pos[i][0] - pos[j][0])*(pos[i][0] - pos[j][0]) + \
-#         (pos[i][1] - pos[j][1])*(pos[i][1] - pos[j][1]))**0.5
-#         G.add_edge(i, j, weight = w)
-
-
-
-# for line in filelines:
-#     curr = int(line)
-#     if curr and prev:
-#         w = ((pos[curr - 1][0] - pos[prev - 1][0])*(pos[curr - 1][0] - pos[prev - 1][0]) + \
-#         (pos[curr - 1][1] - pos[prev - 1][1])*(pos[curr - 1][1] - pos[prev - 1][1]))**0.5
-#         weight += w
-#         print(w)
-#         G.add_edge(curr, prev, weight = w)
-#     prev = curr
-# clusters = [[i] for i in range(0, len(pos))]
-#G = gtsp.gtsp_to_conquer(G, clusters)
-
-
-
-#G = gen.random_graph_trick_nodes(200, 2, 0.02)
-# G = gen.trapezoid_1()
-
-# with open('gtsp/11eil51.txt') as f:
-#     G, clusters = gtsp.read_text_gtsp(f)
-# G = gtsp.gtsp_to_conquer(G, clusters)
-
-
-
-# with open('gtsp/11eil51.solution.txt') as f:
-#     _, tour = gtsp.read_solution_gtsp(f)
-# print('known solution')
-# tour, ds = gtsp.gtsp_to_conquer_solution(clusters, tour)
-# print_solution_info(G, tour, ds)
+# rand.seed(0)
 
 
 
@@ -285,10 +291,10 @@ if __name__ == '__main__':
 
 
     #
-    run_everything(G)
+    run_all_greedy(G)
 
 
-def run_everything(G, start=0, debug=True):
+def run_all_greedy(G, start=0, debug=True):
 
     all_paths = g_utils.floyd_warshall_all(G)
 
@@ -334,4 +340,39 @@ def run_everything(G, start=0, debug=True):
         print('\n'.join(map(str, costs)))
     tour, ds = costs[0][2:]
     return tour, ds
+
+
+# Max size (V+E) to run GLNS on a graph.
+MAX_SIZE = 2250
+def solve(G, start, debug=False):
+    size = len(G) + len(G.edges)
+    best = None
+    best_cost = float('inf')
+
+    if g_utils.is_complete(G):
+        tour, ds = solve_complete(G, start)
+        cost = print_solution_info(G, tour, ds, debug=debug)
+        if cost < best_cost:
+            best = (tour, ds)
+            best_cost = cost
+    elif k_utils.is_transformed_tsp(G):
+        tour, ds = solve_transformed_tsp_using_glns(G, start)
+        cost = print_solution_info(G, tour, ds, debug=debug)
+        if cost < best_cost:
+            best = (tour, ds)
+            best_cost = cost
+    elif size <= MAX_SIZE:
+        tour, ds = solve_using_glns(G, start) # default timeout
+        cost = print_solution_info(G, tour, ds, debug=debug)
+        if cost < best_cost:
+            best = (tour, ds)
+            best_cost = cost
+
+    tour, ds = run_all_greedy(G, start=start, debug=debug)
+    # print('greedy')
+    cost = print_solution_info(G, tour, ds, debug=debug)
+    if cost < best_cost:
+        best = (tour, ds)
+        best_cost = cost
     
+    return best

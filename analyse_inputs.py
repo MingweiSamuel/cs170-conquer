@@ -4,10 +4,37 @@ import networkx as nx
 from functional import seq
 
 import writer
+import kingdom_utils as k_utils
+
+# 415
+# 300 sec
+#
+# GLNS
+# Cost: 2,167.00, Tour: 1,842.00 (85.00%), DS: 325.00 (15.00%).
+# Tour Len: 25, DS Len: 23
+# [116, 115, 188, 189, 190, 63, 64, 183, 163, 51, 169, 170, 148, 79, 78, 165, 146, 147, 108, 109, 110, 180, 196, 199, 0] {146, 147, 148, 163, 165, 169, 170, 51, 183, 188, 189, 190, 63, 64, 196, 199, 78, 79, 108, 109, 110, 115, 116}
+# 
+# greedy
+# Cost: 2,904.00, Tour: 2,618.00 (90.15%), DS: 286.00 (9.85%).
+# Tour Len: 32, DS Len: 24
+# [0, 1, 30, 85, 93, 94, 43, 133, 41, 78, 79, 148, 60, 61, 62, 109, 96, 188, 82, 183, 82, 66, 49, 59, 16, 188, 115, 173, 143, 57, 196, 199] {1, 66, 196, 133, 79, 16, 143, 82, 148, 85, 30, 94, 96, 41, 43, 109, 173, 49, 188, 115, 183, 57, 60, 62}
 
 
-# G, start = writer.readInFile('skeleton/inputs/373')
-# print(len(G) + len(G.edges))
+# 180: 1867
+# 800 sec
+# GLNS
+# Cost: 2,653.00, Tour: 1,358.00 (51.19%), DS: 1,295.00 (48.81%).
+# Tour Len: 19, DS Len: 13
+# [0, 43, 28, 88, 35, 89, 6, 79, 47, 48, 63, 4, 3, 56, 14, 97, 40, 11, 10] {0, 3, 35, 4, 6, 40, 10, 43, 11, 14, 47, 48, 28}
+# 
+# greedy
+# Cost: 2,687.00, Tour: 1,534.00 (57.09%), DS: 1,153.00 (42.91%).
+# Tour Len: 22, DS Len: 13
+# [0, 10, 11, 40, 97, 47, 48, 81, 30, 79, 6, 75, 32, 88, 35, 88, 28, 97, 14, 56, 3, 66] {0, 3, 6, 10, 11, 14, 28, 30, 32, 35, 40, 47, 48}
+
+G, names, start = writer.readInFile('skeleton/inputs/175')
+print(G.nodes[8])
+print(len(G) + len(G.edges))
 
 if __name__ == '__main__':
     path = 'skeleton/inputs/'
@@ -27,7 +54,7 @@ if __name__ == '__main__':
             continue
         # print(fn)
         fn = path + fn[:-3]
-        G, start = writer.readInFile(fn)
+        G, names, start = writer.readInFile(fn)
         
         degrees = seq(G.degree()) \
             .map(lambda t: t[1]) \
@@ -40,13 +67,17 @@ if __name__ == '__main__':
             complete.append(fn)
         elif len(degrees) == 2:
             if degrees[0][1] == degrees[1][1]:
-                print(degrees, fn)
+                # print(degrees, fn)
                 tsp.append(fn)
-        elif size > 1500:
+        elif size > 1000:
             too_big.append(fn)
             if size > biggest_size:
                 biggest_size = size
                 biggest = fn
+
+        if k_utils.is_transformed_tsp(G):
+            k_utils.transform_tsp_to_conquer(G)
+            # print(degrees, fn)
         
         index = size // 100
         index = min(index, len(sizes) - 1)
@@ -56,4 +87,4 @@ if __name__ == '__main__':
     print('tsp: {}\n{}'.format(len(tsp), tsp))
     print('too_big: {}\n{}'.format(len(too_big), too_big))
     print('biggest: {} {}'.format(biggest_size, biggest))
-    print(sizes[15])
+    print(sizes[18])

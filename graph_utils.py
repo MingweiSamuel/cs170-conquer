@@ -5,6 +5,9 @@ import networkx as nx
 from networkx.utils import pairwise
 from networkx.utils.union_find import UnionFind
 
+def is_complete(G):
+    return len(G) * (len(G) - 1) == 2 * len(G.edges)
+
 def floyd_warshall_all(G):
     pred, dist = nx.floyd_warshall_predecessor_and_distance(G)
     def path(u, v): # doesn't include v
@@ -61,6 +64,7 @@ def nearest_detour_tour(G, nodes, start=None, all_paths=None):
 def christofides_tour(G, nodes, start=None, all_paths=None):
     # christofides
     # all pairs shortest dist graph (of original)
+
     if all_paths:
         pred, dist, path = all_paths
     else:
@@ -106,6 +110,9 @@ def christofides_tour(G, nodes, start=None, all_paths=None):
             .map(lambda e: e[0]) \
             .to_list()
 
+    if len(stops) < 1:
+        stops = list(nodes) # singleton
+
     # TODO smart cutting short
     stops = remove_dupes(stops)
 
@@ -115,6 +122,8 @@ def christofides_tour(G, nodes, start=None, all_paths=None):
     return tour
 
 def insert_start_into_stops(stops, dist, path, start):
+    if 0 == len(stops):
+        return [ start ]
     stops = stops[:]
     if start in stops:
         return stops

@@ -14,7 +14,8 @@ def readInFile(name):
     number_of_kingdoms, list_of_kingdom_names, starting_kingdom, adjacency_matrix = s_utils.data_parser(input_data)
     G = s_utils.adjacency_matrix_to_graph(adjacency_matrix)
     # G = nx.relabel_nodes(G, { n: int(n) for n in G.nodes }, copy=True)
-    return G, list_of_kingdom_names.index(starting_kingdom)
+    G = nx.convert_node_labels_to_integers(G)
+    return G, list_of_kingdom_names, list_of_kingdom_names.index(starting_kingdom)
 
 def readOutFile(name):
     with open(name + '.out', 'r') as f:
