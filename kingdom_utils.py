@@ -15,7 +15,7 @@ def check(G, tour, ds):
         raise Exception('bad dominating set.')
     missing = ds - set(tour)
     if missing:
-        raise Exception('failed to visit in ds: ' + str(missing))
+        raise Exception('failed to visit in ds: ' + str(missing) + ', tour: ' + str(tour))
 
 def rotate_start(tour, start):
     """

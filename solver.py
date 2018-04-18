@@ -46,6 +46,9 @@ def make_greedy_sub_ds_fn(value_fn):
 
 
 def greedy_tour(G, ds, start=None, all_paths=None):
+    if len(ds) <= 1:
+        return(list(ds))
+
     # first get shortest paths
     if all_paths:
         pred, dist, path = all_paths
@@ -79,7 +82,11 @@ def solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=None, all
         raise Exception('fn failed to make dominating set')
     tour = tour_fn(G, ds, start=start, all_paths=all_paths)
     # BAD TOUR
-    k_utils.check(G, tour, ds)
+    try:
+        k_utils.check(G, tour, ds)
+    except:
+        print('failed for ' + tour_fn.__name__ + '.')
+        raise
 
     return tour, ds
 
@@ -216,7 +223,7 @@ def solve_using_glns(G, start, timeout=None, complexity=1):
         timeout = max(1, int(complexity * timeout))
 
     tour_gtsp = glns_interface.run(dist, ids, clusters, timeout)
-    # print(tour_gtsp)
+    # print(tour_gtsp) ###
     tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
     return tour, ds
 

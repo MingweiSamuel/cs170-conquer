@@ -23,7 +23,7 @@ def run(dist, ids, clusters, timeout=10):
 
 
     # stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
-    proc = subprocess.Popen([ 'julia', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=10000'],
+    proc = subprocess.Popen([ 'julia', '--depwarn=no', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=10000'],
             stdout=subprocess.PIPE)
     # proc = subprocess.Popen([ 'sleep', '100' ], stdout=subprocess.PIPE, preexec_fn=init_worker)
     tour = None

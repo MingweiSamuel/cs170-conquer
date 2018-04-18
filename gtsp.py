@@ -249,7 +249,7 @@ def conquer_to_gtsp(G_str, start):
 def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
     start = str(start)
     tour_ids = seq(tour).map(lambda i: ids[i]).to_list()
-    # print(tour_ids)
+    # print(tour_ids) ###
 
     ds = set()
     stops = []
@@ -263,8 +263,12 @@ def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
         if not stops or stops[-1] != v0:
             stops.append(v0)
     
-    # print(stops)
-    tour = g_utils.stops_to_tour(stops, og_path)
+    # print(stops) ###
+    if len(stops) > 1:
+        tour = g_utils.stops_to_tour(stops, og_path)
+    else:
+        tour = stops[:]
+    # print(tour)
 
     tour = seq(tour).map(int).to_list()
     ds = seq(ds).map(int).to_set()
