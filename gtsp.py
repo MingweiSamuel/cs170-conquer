@@ -182,12 +182,13 @@ def conquer_to_gtsp(G_str, start):
     >>> random.seed(3)
     >>> import gen
     >>> G = gen.random_connected_graph(200, 10, 0.01)
-    >>> G, clusters, ids, _ = conquer_to_gtsp(G, 0)
-    >>> len(G)
-    1230
-    >>> len(clusters) # |V| + 2
-    202
+    >>> dist, clusters, ids, _ = conquer_to_gtsp(G, 0)
+    # >>> len(G)
+    # 1230
+    # >>> len(clusters) # |V| + 2
+    # 202
     """
+
     start = str(start)
 
     G_aug = nx.Graph()
@@ -235,14 +236,15 @@ def conquer_to_gtsp(G_str, start):
             d += G_aug[v0][v0 + '_*']['weight']
         return d
 
-    G_full = nx.Graph()
-    G_full.add_nodes_from(G_aug.nodes())
-
-    for u, v in itertools.product(G_aug.nodes(), G_aug.nodes()):
-        G_full.add_edge(u, v, weight=dist(u, v))
+    # # This take forever
+    # G_full = nx.Graph()
+    # G_full.add_nodes_from(G_aug.nodes())
+    # for u in G_aug.nodes():
+    #     for v in G_aug.nodes():
+    #         G_full.add_edge(u, v, weight=dist(u, v))
     
-    ids = list(G_full.nodes())
-    return G_full, clusters, ids, og_path
+    ids = list(G_aug.nodes())
+    return dist, ids, clusters, og_path
 
 def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
     start = str(start)
@@ -271,7 +273,7 @@ def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
 
 
         
-def output_gtsp(output, G, clusters, name='unnamed'):
+def output_gtsp(output, dist, ids, clusters, name='unnamed', mult=1e5):
     """
     NAME : rat575
     COMMENT : Rattled grid (Pulleyblank)
@@ -284,18 +286,18 @@ def output_gtsp(output, G, clusters, name='unnamed'):
     output.write('NAME: ' + re.sub(r'\W', '_', str(name)) + '\n')
     output.write('COMMENT: ' + ' auto generated ' + name + '\n')
     output.write('TYPE: TSP\n')
-    output.write('DIMENSION: ' + str(len(G)) + '\n')
+    output.write('DIMENSION: ' + str(len(ids)) + '\n')
     output.write('GTSP_SETS: ' + str(len(clusters)) + '\n')
     output.write('EDGE_WEIGHT_TYPE: EXPLICIT\n')
     output.write('EDGE_WEIGHT_FORMAT: LOWER_DIAG_ROW\n')
     output.write('EDGE_WEIGHT_SECTION:\n')
-    ids = list(G.nodes())
-    for u in range(len(G)):
+    # ids = list(G.nodes())
+    for u in range(len(ids)):
         for v in range(u + 1):
             if u == v:
                 output.write('0     ')
             else:
-                s = str(G[ids[u]][ids[v]]['weight'])
+                s = str(int(mult * dist(ids[u], ids[v])))
                 output.write(f'{s: <5}')
             output.write(' ')
         output.write('\n')

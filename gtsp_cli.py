@@ -31,14 +31,15 @@ if __name__ == '__main__':
 
     print('start: {}'.format(start))
     
-    if False:
+    if True:
         G_str = g_utils.string_label(G)
 
-        G_gtsp, clusters, ids, og_path = gtsp.conquer_to_gtsp(G_str, start)
+        dist, ids, clusters, og_path = gtsp.conquer_to_gtsp(G_str, start)
         print('done transforming problem')
-        for _, _, data in G_gtsp.edges(data=True):
-            data['weight'] = int(1e5 * data['weight']) # TODO smart scaling?
-        tour_gtsp = glns_interface.run(G_gtsp, clusters, timeout=timeout)
+        # for _, _, data in G_gtsp.edges(data=True):
+        #     data['weight'] = int(1e5 * data['weight']) # TODO smart scaling?
+        tour_gtsp = glns_interface.run(dist, ids, clusters, timeout)
+        print(tour_gtsp)
         tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
         # print(tour, ds)
         print()

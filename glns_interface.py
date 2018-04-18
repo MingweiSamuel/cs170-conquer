@@ -4,13 +4,14 @@ import ast
 
 import gtsp
 
-def run(G_gtsp, clusters, timeout=10):
+def run(dist, ids, clusters, timeout=10):
     """
     G: gtsp graph (complete).
     """
     path = 'GLNS/inputs/temp_interface_{}.txt'.format(random.randint(0, int(1e9)))
     with open(path, 'w+') as output_file:
-        gtsp.output_gtsp(output_file, G_gtsp, clusters, name='temp_interface')
+        gtsp.output_gtsp(output_file, dist, ids, clusters, name='temp_interface')
+    print('done writing')
     stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
     lines = stdoutdata.split('\n')
     for line in lines:
@@ -22,4 +23,5 @@ def run(G_gtsp, clusters, timeout=10):
             tour = list(map(lambda n: n - 1, ast.literal_eval(tour_str)))
             print(tour)
             return tour
+    print(lines)
     
