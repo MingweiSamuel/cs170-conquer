@@ -46,9 +46,6 @@ def make_greedy_sub_ds_fn(value_fn):
 
 
 def greedy_tour(G, ds, start=None, all_paths=None):
-    if len(ds) <= 1:
-        return(list(ds))
-
     # first get shortest paths
     if all_paths:
         pred, dist, path = all_paths
@@ -59,10 +56,10 @@ def greedy_tour(G, ds, start=None, all_paths=None):
     unreached = set(ds)
     if start is not None:
         curr = start
-        unreached.add(start) # silly, just get removes first thing
+        unreached.add(start) # silly, just get removes first thing in
     else:
         curr = rand.choice(list(ds))
-    
+
     while True:
         unreached.remove(curr)
         if not unreached:
@@ -72,6 +69,8 @@ def greedy_tour(G, ds, start=None, all_paths=None):
             .min_by(lambda n: dist[curr][n])
         tour.extend(path(curr, nex))
         curr = nex
+    if len(tour) == 0:
+        return list(ds) # ds is start
     tour.extend(path(curr, tour[0]))
 
     return tour
@@ -175,12 +174,13 @@ def solve_cds_christofides(G, cds_fn, start=None, all_paths=None):
 
     # TODO smart cutting short
     stops = g_utils.remove_dupes(stops)
+    #print(stops) ###
 
     # remove extra from cds (connected dominating set) to make ds (dominating set)
     ds = set(cds)
     while True:
         can_remove = seq(ds) \
-                .filter(lambda n: nx.is_dominating_set(G, ds - set([ n ]))) \
+                .filter(lambda n: n != start and nx.is_dominating_set(G, ds - set([ n ]))) \
                 .to_list()
         if not can_remove:
             break
@@ -259,8 +259,8 @@ def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
 
 
 
-def print_solution_info(G, tour, ds, debug=True):
-    k_utils.check(G, tour, ds)
+def print_solution_info(G, tour, ds, debug=True, start=None):
+    k_utils.check(G, tour, ds, start=start)
     cost_tour, cost_ds = k_utils.cost(G, tour, ds)
     cost_total = cost_tour + cost_ds
     if debug:
@@ -318,7 +318,11 @@ def run_all_greedy(G, start=0, debug=True):
         if debug:
             print(s)
         tour, ds = solve_cds_christofides(G, cds_fn, start=start, all_paths=all_paths)
-        c = print_solution_info(G, tour, ds, debug=debug)
+        try:
+            c = print_solution_info(G, tour, ds, debug=debug, start=start)
+        except:
+            print('FAILED: ' + s)
+            raise
         costs.append((c, s, tour, ds))
 
 
@@ -341,7 +345,11 @@ def run_all_greedy(G, start=0, debug=True):
             if debug:
                 print(s)
             tour, ds = solve_dominating_set_then_tsp(G, dominating_set_fn, tour_fn, start=start, all_paths=all_paths)
-            c = print_solution_info(G, tour, ds, debug=debug)
+            try:
+                c = print_solution_info(G, tour, ds, debug=debug, start=start)
+            except:
+                print('FAILED: ' + s)
+                raise
             costs.append((c, s, tour, ds))
 
     costs.sort(key=lambda t: t[0])

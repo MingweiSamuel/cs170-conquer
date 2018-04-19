@@ -42,11 +42,11 @@ def solve_file(tup):
             out_tour.append(out_tour[0])
         out_ds = seq(ds).map(lambda i: names[i]).to_set()
 
-        print('Solved {}, writing output.'.format(fname))
+        print('SOLVED {}, writing output.'.format(fname))
         writer.writeOutFile(OUTPUT_PATH + fname, out_tour, out_ds)
-        print('Wrote {}. Elapsed minutes: {:.2f}.'.format(fname, (time.time() - time_start) / 60))
+        print('WROTE {}. Elapsed minutes: {:.2f}.'.format(fname, (time.time() - time_start) / 60))
     except Exception as e:
-        print('EXCEPTION ON INPUT {}. Elapsed minutes: {:.2f}'.format(fname, (time.time() - time_start) / 60), file=sys.stderr)
+        print('  ~!~!~!~!~!~!~!~!~  EXCEPTION ON INPUT {}. Elapsed minutes: {:.2f}'.format(fname, (time.time() - time_start) / 60), file=sys.stderr)
         print(e, file=sys.stderr)
         raise
 

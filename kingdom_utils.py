@@ -5,7 +5,10 @@ from networkx.utils import pairwise
 import skeleton.student_utils_sp18 as s_utils
 import graph_utils as g_utils
 
-def check(G, tour, ds):
+def check(G, tour, ds, start=None):
+    if start is not None:
+        if start not in tour:
+            raise Exception('Tour does not hit start ' + str(start) + ': ' + str(tour) + '.')
     if len(tour) > 1:
         edges = pairwise(tour + [ tour[0] ])
         for edge in edges:
@@ -21,6 +24,7 @@ def rotate_start(tour, start):
     """
     Rotates tour so it starts/ends with START.
     """
+    #print(tour, start) ###
     i = tour.index(start)
     return tour[i:] + tour[:i]
 

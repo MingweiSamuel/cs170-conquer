@@ -31,8 +31,6 @@ def minimum_connected_subset_spanning_tree(G, nodes, **kwargs):
 
 def nearest_detour_tour(G, nodes, start=None, all_paths=None):
     nodes = list(nodes)
-    if len(nodes) == 1:
-        return nodes
 
     if all_paths:
         pred, dist, path = all_paths
@@ -59,14 +57,15 @@ def nearest_detour_tour(G, nodes, start=None, all_paths=None):
         node, i, _ = nex
         stops.insert(i, node)
         nodes_left.remove(node)
-    
+
+    if len(set(stops)) == 1:
+        return list(set(stops))
+    #print(stops)
     tour = stops_to_tour(stops, path)
+    #print(tour)
     return tour
-        
 
 def christofides_tour(G, nodes, start=None, all_paths=None):
-    if len(nodes) == 1:
-        return list(nodes)
     # christofides
     # all pairs shortest dist graph (of original)
 
@@ -122,6 +121,8 @@ def christofides_tour(G, nodes, start=None, all_paths=None):
     stops = remove_dupes(stops)
 
     stops = insert_start_into_stops(stops, dist, path, start)
+    if len(stops) == 1:
+        return list(stops)
 
     tour = stops_to_tour(stops, path)
     return tour
