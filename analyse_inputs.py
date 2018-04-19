@@ -46,6 +46,7 @@ if __name__ == '__main__':
     biggest_size = 0
     biggest = ''
     time_est = 0
+    time_glns = 0
 
     sizes = [ [] for _ in range(30) ]
 
@@ -83,6 +84,7 @@ if __name__ == '__main__':
 
         else: # Normal, with GLNS
             time_est += 100 + size
+            time_glns += 5 + size
         
         index = size // 100
         index = min(index, len(sizes) - 1)
@@ -93,5 +95,6 @@ if __name__ == '__main__':
     print('too_big: {}\n{}'.format(len(too_big), too_big))
     print('biggest: {} {}'.format(biggest_size, biggest))
     print('time_est: {}'.format(time_est))
+    print('time_glns: {}'.format(time_glns))
     #print(sizes[18])
     
