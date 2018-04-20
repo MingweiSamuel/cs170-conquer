@@ -112,8 +112,8 @@ def main():
         i = 0
         while not res.ready():
             i += 1
-            if i % 6 = 0:
-                print(' Problems left: {}.'.format(result._number_left))
+            if i % 6 == 0:
+                print(' Problems left: {}.'.format(res._number_left))
             time.sleep(5)
         out = res.get()
     except KeyboardInterrupt:
