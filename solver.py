@@ -400,11 +400,14 @@ def solve(G, start, debug=False, complexity=1):
             best = (tour, ds)
             best_cost = cost
     elif size <= MAX_SIZE:
-        tour, ds = solve_using_gtsp_solvers(G, start, complexity=complexity) # default timeout
-        cost = print_solution_info(G, tour, ds, debug=debug)
-        if cost < best_cost:
-            best = (tour, ds)
-            best_cost = cost
+        sols = solve_using_gtsp_solvers(G, start, complexity=complexity) # default timeout
+        for sol in sols:
+            tour, ds = sol
+            cost = print_solution_info(G, tour, ds, debug=debug)
+            print('asdf {}'.format(cost))
+            if cost < best_cost:
+                best = (tour, ds)
+                best_cost = cost
 
     tour, ds = run_all_greedy(G, start=start, debug=debug)
     # print('greedy')
@@ -412,5 +415,5 @@ def solve(G, start, debug=False, complexity=1):
     if cost < best_cost:
         best = (tour, ds)
         best_cost = cost
-    
+
     return best + (best_cost,)

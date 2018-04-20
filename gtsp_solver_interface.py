@@ -18,6 +18,85 @@ def write_temp_gtsp(dist, ids, clusters):
         gtsp.output_gtsp(output_file, dist, ids, clusters, name='temp_interface')
     return path
 
+DEVNULL = open(os.devnull, 'w')
+def run_glkh(path, timeout=10):
+    print('  Running GLKH on {} with timeout {}.'.format(path, timeout))
+    par_file = path + '.par'
+    tour_file = par_file + '.tour'
+    with open(par_file, 'w+') as par:
+        # TIME_LIMIT is for each RUNS so we do two RUNS with half the timeout each.
+        # *_FILE locations are relative to GLKH folder. Added symlink to fix.
+        par.write("""\
+PROBLEM_FILE = {}
+ASCENT_CANDIDATES = 500
+MAX_CANDIDATES = 30
+POPULATION_SIZE = 5
+RUNS = 2
+TRACE_LEVEL = 0
+TIME_LIMIT = {}
+TOUR_FILE = {}
+SEED = {}
+""".format(path, timeout / 2, tour_file, random.randint(0, int(1e8))))
+    
+    proc = subprocess.Popen([ './GLKH', par_file ], cwd='./GLKH', stdout=DEVNULL, stderr=DEVNULL)
+    proc.wait()
+
+    tour = []
+    tour_section = False
+    with open(tour_file, 'r') as tour_file:
+        for line in tour_file:
+            line = line.strip()
+            if 'EOF' == line:
+                break
+            if tour_section:
+                if '-1' == line:
+                    tour_section = False
+                    continue
+                tour.append(int(line) - 1)
+            elif 'TOUR_SECTION' == line:
+                tour_section = True
+    return tour
+
+def run_glns(path, timeout=10):
+    print('  Running GLNS on {} with timeout {}.'.format(path, timeout))
+    # stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
+    proc = subprocess.Popen([ 'julia', '--depwarn=no', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=10000'],
+            stdout=subprocess.PIPE)
+    # proc = subprocess.Popen([ 'sleep', '100' ], stdout=subprocess.PIPE, preexec_fn=init_worker)
+    tour = None
+    while proc.poll() is None:
+        err = False
+        try:
+            line = proc.stdout.readline()
+            if line is None:
+                break
+            line = line.decode('utf-8')
+            # print(line)
+            if line.startswith('Cost'):
+                # print(line)
+                pass
+            elif line.startswith('Tour Ordering'):
+                # print(line)
+                tour_str = line[line.index('['):].strip()
+                tour = list(map(lambda n: n - 1, ast.literal_eval(tour_str)))
+                # print(tour)
+                break
+            elif 'Exception' in line or 'ERROR' in line:
+                err = True
+            if err:
+                print(line)
+        except: # KeyboardInterrupt
+            print('glns_interface exception')
+            proc.terminate()
+            raise
+    
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+    return tour
+    
+
 """
 ASCENT_CANDIDATES = 13
 BACKBONE_TRIALS = 0
@@ -65,82 +144,4 @@ SUBSEQUENT_PATCHING = YES
 # TOUR_FILE =
 TRACE_LEVEL = 1
 """
-def run_glkh(path, timeout=10):
-    print('  Running GLKH on {} with timeout {}.'.format(path, timeout))
-    par_file = path + '.par'
-    tour_file = par_file + '.tour'
-    with open(par_file, 'w+') as par:
-        # TIME_LIMIT is for each RUNS so we do two RUNS with half the timeout each.
-        par.write("""\
-        PROBLEM_FILE = {}
-        ASCENT_CANDIDATES = 500
-        MAX_CANDIDATES = 30
-        POPULATION_SIZE = 5
-        RUNS = 2
-        TRACE_LEVEL = 0
-        TIME_LIMIT = {}
-        TOUR_FILE = {}
-        SEED = {}
-        """.format(path, timeout / 2, tour_file, random.randint(0, int(1e8))))
-    
-    proc = subprocess.Popen([ 'GLKH/GLKH_EXP', par_file ])
-    proc.wait()
 
-    try:
-        tour = []
-        tour_section = False
-        with open(tour_file, 'r') as tour_file:
-            for line in tour_file:
-                line = line.strip()
-                if 'EOF' == line:
-                    break
-                if tour_section:
-                    if '-1' == line:
-                        tour_section = False
-                        continue
-                    tour.append(int(line) - 1)
-                elif 'TOUR_SECTION' == line:
-                    tour_section = True                
-        return tour
-    except:
-        return None
-
-def run_glns(path, timeout=10):
-    print('  Running GLNS on {} with timeout {}.'.format(path, timeout))
-    # stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
-    proc = subprocess.Popen([ 'julia', '--depwarn=no', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=10000'],
-            stdout=subprocess.PIPE)
-    # proc = subprocess.Popen([ 'sleep', '100' ], stdout=subprocess.PIPE, preexec_fn=init_worker)
-    tour = None
-    while proc.poll() is None:
-        err = False
-        try:
-            line = proc.stdout.readline()
-            if line is None:
-                break
-            line = line.decode('utf-8')
-            # print(line)
-            if line.startswith('Cost'):
-                # print(line)
-                pass
-            elif line.startswith('Tour Ordering'):
-                # print(line)
-                tour_str = line[line.index('['):].strip()
-                tour = list(map(lambda n: n - 1, ast.literal_eval(tour_str)))
-                # print(tour)
-                break
-            elif 'Exception' in line or 'ERROR' in line:
-                err = True
-            if err:
-                print(line)
-        except: # KeyboardInterrupt
-            print('glns_interface exception')
-            proc.terminate()
-            raise
-    
-    try:
-        os.remove(path)
-    except OSError:
-        pass
-    return tour
-    
