@@ -212,20 +212,41 @@ def solve_complete(G, start):
         return [ start ], { start }
     return [ start, best ], { best }
 
-def solve_using_glns(G, start, timeout=None, complexity=1):
+def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
     G_str = g_utils.string_label(G)
 
     dist, ids, clusters, og_path = gtsp.conquer_to_gtsp(G_str, start)
 
-    # timeout: size / 2
     if timeout is None:
-        timeout = 5 + len(G) + len(G.edges)
+        timeout = 15 + len(G) + len(G.edges)
         timeout = max(1, int(complexity * timeout))
+    
+    path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
+    outputs = []
 
-    tour_gtsp = gtsp_solver_interface.run(dist, ids, clusters, timeout)
-    # print(tour_gtsp) ###
-    tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
-    return tour, ds
+    # These could be done in parallel to make latency of single problem a lot faster,
+    # but since all the problems are already in parallel, it wouldn't increase throughput.
+    try:
+        tour_gtsp = gtsp_solver_interface.run_glkh(path, timeout)
+        output = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
+        if output:
+            outputs.append(output)
+    except:
+        print('FAILED to run GLKH.')
+        pass
+
+    try:
+        tour_gtsp = gtsp_solver_interface.run_glns(path, timeout)
+        output = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
+        if output:
+            outputs.append(output)
+    except:
+        print('FAILED to run GLNS.')
+        pass
+
+    return outputs
+
+
 
 def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
     G_tsp, ids, dangling_dict = k_utils.untransform_tsp(G)
@@ -379,7 +400,7 @@ def solve(G, start, debug=False, complexity=1):
             best = (tour, ds)
             best_cost = cost
     elif size <= MAX_SIZE:
-        tour, ds = solve_using_glns(G, start, complexity=complexity) # default timeout
+        tour, ds = solve_using_gtsp_solvers(G, start, complexity=complexity) # default timeout
         cost = print_solution_info(G, tour, ds, debug=debug)
         if cost < best_cost:
             best = (tour, ds)
