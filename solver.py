@@ -392,4 +392,4 @@ def solve(G, start, debug=False, complexity=1):
         best = (tour, ds)
         best_cost = cost
     
-    return best
+    return best + (best_cost,)

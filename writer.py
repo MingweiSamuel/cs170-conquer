@@ -17,10 +17,11 @@ def readInFile(name):
     G = nx.convert_node_labels_to_integers(G)
     return G, list_of_kingdom_names, list_of_kingdom_names.index(starting_kingdom)
 
-def readOutFile(name):
+def readOutFile(name, names=None):
     with open(name + '.out', 'r') as f:
-        tour = list(map(int, f.readline().strip().split()[:-1]))
-        ds = set(map(int, f.readline().strip().split()))
+        fn = names.index if names else int
+        tour = list(map(fn, f.readline().strip().split()[:-1]))
+        ds = set(map(fn, f.readline().strip().split()))
         return tour, ds
 
 def writeInFile(name, start, G): #name : String, start : String, G : networkx
