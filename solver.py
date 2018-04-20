@@ -404,7 +404,7 @@ def solve(G, start, debug=False, complexity=1):
         for sol in sols:
             tour, ds = sol
             cost = print_solution_info(G, tour, ds, debug=debug)
-            print('asdf {}'.format(cost))
+            # print('asdf {}'.format(cost))
             if cost < best_cost:
                 best = (tour, ds)
                 best_cost = cost
