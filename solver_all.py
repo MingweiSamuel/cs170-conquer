@@ -32,7 +32,7 @@ def solve_file(tup):
 
     try:
         G, names, start = writer.readInFile(INPUT_PATH + fname)
-        print('Solving {}, V={}, E={}, start={}'.format(fname, len(G), len(G.edges), start))
+        print('  Solving {}, V={}, E={}, start={}'.format(fname, len(G), len(G.edges), start))
 
         tour, ds, cost = solver.solve(G, start=start, debug=False, complexity=complexity)
         tour = k_utils.rotate_start(tour, start)
@@ -53,14 +53,14 @@ def solve_file(tup):
         out_ds = seq(ds).map(lambda i: names[i]).to_set()
 
         if old_cost <= cost:
-            print('USED OLD {} w/ cost {:.2f}, new cost {:.2f}.'.format(fname, old_cost, cost))
+            print('USED OLD {}, new cost {:.2f}, old cost {:.2f}.'.format(fname, cost, old_cost))
             return
 
-        print('SOLVED {} w/ cost {:.2f}, writing output.'.format(fname, cost))
+        print('SOLVED {}, new cost {:.2f}, old cost {:.2f}. Writing output.'.format(fname, cost, old_cost))
         writer.writeOutFile(OUTPUT_PATH + fname, out_tour, out_ds)
-        print('WROTE {}. Elapsed minutes: {:.2f}.'.format(fname, (time.time() - time_start) / 60))
+        print('  WROTE {}. Elapsed minutes: {:.2f}.'.format(fname, (time.time() - time_start) / 60))
     except Exception as e:
-        print('  ~!~!~!~!~!~!~!~!~  EXCEPTION ON INPUT {}. Elapsed minutes: {:.2f}'.format(fname, (time.time() - time_start) / 60), file=sys.stderr)
+        print('##~!~!~!~!~!~!~!~!~  EXCEPTION ON INPUT {}. Elapsed minutes: {:.2f}'.format(fname, (time.time() - time_start) / 60), file=sys.stderr)
         print(e, file=sys.stderr)
         raise
 
@@ -109,7 +109,11 @@ def main():
         print('Solving {} inputs.'.format(len(all_files)))
         res = pool.map_async(solve_file, inputs)
         print('Waiting for results...')
+        i = 0
         while not res.ready():
+            i += 1
+            if i % 6 = 0:
+                print(' Problems left: {}.'.format(result._number_left))
             time.sleep(5)
         out = res.get()
     except KeyboardInterrupt:

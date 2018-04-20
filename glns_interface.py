@@ -19,7 +19,7 @@ def run(dist, ids, clusters, timeout=10):
     path = 'GLNS/inputs/temp_interface_{}_{}.txt'.format(os.getpid(), random.randint(0, int(1e9)))
     with open(path, 'w+') as output_file:
         gtsp.output_gtsp(output_file, dist, ids, clusters, name='temp_interface')
-    print('Wrote {}. Running GLNS with timeout {}.'.format(path, timeout))
+    print('  Wrote {}. Running GLNS with timeout {}.'.format(path, timeout))
 
 
     # stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
