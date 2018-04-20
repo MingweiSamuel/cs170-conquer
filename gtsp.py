@@ -193,6 +193,7 @@ def conquer_to_gtsp(G_str, start):
 
     G_aug = nx.Graph()
     G_aug.add_nodes_from(G_str.nodes())
+    G_aug.add_edges_from(G_str.edges(data=True))
 
     for v in G_str:
         G_aug.add_node(v + '_*')
@@ -225,10 +226,17 @@ def conquer_to_gtsp(G_str, start):
         us = u.split('_')
         vs = v.split('_')
         return us, us[0], vs, vs[0]
+    
     def dist(u, v):
         us, u0, vs, v0 = tran(u, v)
-        if u0 == v0:
-            return 0
+        if u0 == v0: # In same lolipop + original
+            # print(u, v, us, vs)
+            if len(us) == len(vs): # Same node or both in lolipop
+                # print(' 0')
+                return 0
+            # Otherwise, return lolipop stem travel cost (1/2 capture cost)
+            # print('', G_aug[u0][u0 + '_*']['weight'])
+            return G_aug[u0][u0 + '_*']['weight']
         d = og_dist[u0][v0]
         if len(us) > 1:
             d += G_aug[u0][u0 + '_*']['weight']
@@ -236,12 +244,15 @@ def conquer_to_gtsp(G_str, start):
             d += G_aug[v0][v0 + '_*']['weight']
         return d
 
-    # # This take forever
-    # G_full = nx.Graph()
-    # G_full.add_nodes_from(G_aug.nodes())
+    # # # This take forever
+    # # G_full = nx.Graph()
+    # # G_full.add_nodes_from(G_aug.nodes())
+    # dist2 = dict(nx.floyd_warshall(G_aug))
     # for u in G_aug.nodes():
     #     for v in G_aug.nodes():
-    #         G_full.add_edge(u, v, weight=dist(u, v))
+    #         if dist(u, v) != dist2[u][v]:
+    #             print(u, v, dist(u, v), dist2[u][v])
+    #             raise Exception()
     
     ids = list(G_aug.nodes())
     return dist, ids, clusters, og_path
