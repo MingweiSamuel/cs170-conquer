@@ -20,7 +20,9 @@ def readInFile(name):
 def readOutFile(name, names=None):
     with open(name + '.out', 'r') as f:
         fn = names.index if names else int
-        tour = list(map(fn, f.readline().strip().split()[:-1]))
+        tour = list(map(fn, f.readline().strip().split()))
+        if len(tour) > 1:
+            tour = tour[:-1]
         ds = set(map(fn, f.readline().strip().split()))
         return tour, ds
 
@@ -44,12 +46,14 @@ def writeInFile(name, start, G): #name : String, start : String, G : networkx
     f.close()
 
 def writeOutFile(name, tour, ds):
+    ds_cpy = set(ds)
     f = open(name + ".out", "w+")
     for n in tour:
         f.write(str(n) + " ")
     f.write("\n")
     for n in tour:
-        if n in ds:
+        if n in ds_cpy:
+            ds_cpy.remove(n)
             f.write(str(n) + " ")
     f.close()
 

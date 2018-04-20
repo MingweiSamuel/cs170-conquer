@@ -33,8 +33,8 @@ def solve_file(tup):
         G, names, start = writer.readInFile(INPUT_PATH + fname)
         print('  Solving {}, V={}, E={}, start={}'.format(fname, len(G), len(G.edges), start))
 
-        tour, ds, cost = solver.solve(G, start=start, debug=False, complexity=complexity)
-        tour = k_utils.rotate_start(tour, start)
+        # tour, ds, cost = solver.solve(G, start=start, debug=False, complexity=complexity)
+        # tour = k_utils.rotate_start(tour, start)
 
         # compare with existing
         old_cost = float('inf')
@@ -44,6 +44,9 @@ def solve_file(tup):
         except:
             print('Load old {} failed.'.format(fname))
             pass
+        tour = old_tour
+        ds = old_ds
+        cost = old_cost
 
 
         out_tour = seq(tour).map(lambda i: names[i]).to_list()
@@ -51,9 +54,9 @@ def solve_file(tup):
             out_tour.append(out_tour[0])
         out_ds = seq(ds).map(lambda i: names[i]).to_set()
 
-        if old_cost <= cost:
-            print('USED OLD {}, new cost {:.2f}, old cost {:.2f}.'.format(fname, cost, old_cost))
-            return
+        # if old_cost <= cost:
+        #     print('USED OLD {}, new cost {:.2f}, old cost {:.2f}.'.format(fname, cost, old_cost))
+        #     return
 
         print('SOLVED {}, new cost {:.2f}, old cost {:.2f}. Writing output.'.format(fname, cost, old_cost))
         writer.writeOutFile(OUTPUT_PATH + fname, out_tour, out_ds)
