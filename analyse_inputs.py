@@ -47,6 +47,7 @@ if __name__ == '__main__':
     biggest = ''
     time_est = 0
     time_glns = 0
+    size_1000_2250 = []
 
     sizes = [ [] for _ in range(30) ]
 
@@ -65,6 +66,9 @@ if __name__ == '__main__':
             .to_list()
 
         size = len(G) + len(G.edges)
+
+        if 1000 <= size <= 2250:
+            size_1000_2250.append(fn.split('/')[-1])
 
         if len(degrees) == 1:
             time_est += 30
@@ -96,5 +100,7 @@ if __name__ == '__main__':
     print('biggest: {} {}'.format(biggest_size, biggest))
     print('time_est: {}'.format(time_est))
     print('time_glns: {}'.format(time_glns))
+    print('size_1000_2250: {}'.format(','.join(size_1000_2250)))
+    # behind in: 102,108,160,177,18,180,189,205,211,241,306,322,351,360,366,373,387,415,427,429,438,453,460,478,480,487,52,53,534,537,564,568,574,583,603,610,613,658,664,667,678,685,693,722,93,99
     #print(sizes[18])
     
