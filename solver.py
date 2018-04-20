@@ -10,7 +10,7 @@ import writer
 import graph_utils as g_utils
 import skeleton.student_utils_sp18 as s_utils
 import kingdom_utils as k_utils
-import glns_interface
+import gtsp_solver_interface
 from value_fns import value_fns
 
 
@@ -222,7 +222,7 @@ def solve_using_glns(G, start, timeout=None, complexity=1):
         timeout = 5 + len(G) + len(G.edges)
         timeout = max(1, int(complexity * timeout))
 
-    tour_gtsp = glns_interface.run(dist, ids, clusters, timeout)
+    tour_gtsp = gtsp_solver_interface.run(dist, ids, clusters, timeout)
     # print(tour_gtsp) ###
     tour, ds = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
     return tour, ds
@@ -237,7 +237,7 @@ def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
     if timeout == None:
         timeout = len(G_tsp)
         timeout = max(1, int(complexity * timeout))
-    tour_tsp = glns_interface.run(dist, ids, clusters, timeout)
+    tour_tsp = gtsp_solver_interface.run(dist, ids, clusters, timeout)
 
     def should_capture_dangling(v):
         cost_v = G.nodes[v]['weight']

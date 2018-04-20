@@ -13,7 +13,6 @@ from functional import seq
 import gtsp
 import writer
 import gen
-import glns_interface
 import solver
 import graph_utils as g_utils
 import kingdom_utils as k_utils
