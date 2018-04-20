@@ -360,7 +360,7 @@ def run_all_greedy(G, start=0, debug=True):
 
 
 # Max size (V+E) to run GLNS on a graph.
-MAX_SIZE = 1000 #2250
+MAX_SIZE = 2300 #1000 #2250
 def solve(G, start, debug=False, complexity=1):
     size = len(G) + len(G.edges)
     best = None
