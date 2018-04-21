@@ -219,9 +219,11 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
     dist, ids, clusters, og_path = gtsp.conquer_to_gtsp(G_str, start)
 
     if timeout is None:
-        timeout = 15 + len(G) + len(G.edges)
+        s = len(G) + len(G.edges)
+        #timeout = 15 + len(G) + len(G.edges)
+        timeout = s ** 2 / 1000 + s / 4
         timeout = max(1, int(complexity * timeout))
-    
+
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
     outputs = []
 
@@ -393,7 +395,7 @@ def run_all_greedy(G, start=0, debug=True):
 
 
 # Max size (V+E) to run GLNS on a graph.
-MAX_SIZE = 2300 #1000 #2250
+MAX_SIZE = 3000 #2300 #1000 #2250
 def solve(G, start, debug=False, complexity=1):
     size = len(G) + len(G.edges)
     best = None
