@@ -1,10 +1,11 @@
+import re
+import os
 import random as rand
 from functional import seq
 import networkx as nx
 from networkx.utils import pairwise
 
 import gen
-import re
 import gtsp
 import writer
 import graph_utils as g_utils
@@ -244,6 +245,11 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         print('FAILED to run GLNS.')
         pass
 
+    try:
+        os.remove(path)
+    except:
+        pass
+
     return outputs
 
 
@@ -256,9 +262,15 @@ def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
         return G_tsp[u][v]['weight']
 
     if timeout == None:
-        timeout = len(G_tsp)
+        timeout = 5 * len(G_tsp)
         timeout = max(1, int(complexity * timeout))
-    tour_tsp = gtsp_solver_interface.run(dist, ids, clusters, timeout)
+    path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
+    tour_tsp = gtsp_solver_interface.run_glns(path, timeout=timeout)
+
+    try:
+        os.remove(path)
+    except:
+        pass
 
     def should_capture_dangling(v):
         cost_v = G.nodes[v]['weight']

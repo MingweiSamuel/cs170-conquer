@@ -90,10 +90,10 @@ def run_glns(path, timeout=10):
             proc.terminate()
             raise
     
-    try:
-        os.remove(path)
-    except OSError:
-        pass
+    #try:
+    #    os.remove(path)
+    #except OSError:
+    #    pass
     return tour
     
 
