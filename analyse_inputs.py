@@ -5,6 +5,7 @@ from functional import seq
 
 import solver
 import writer
+import graph_utils as g_utils
 import kingdom_utils as k_utils
 
 # 415
@@ -48,6 +49,7 @@ if __name__ == '__main__':
     time_est = 0
     time_glns = 0
     size_1000_2250 = []
+    size_3000_plus = []
 
     sizes = [ [] for _ in range(30) ]
 
@@ -69,6 +71,8 @@ if __name__ == '__main__':
 
         if 1000 <= size <= 2250:
             size_1000_2250.append(fn.split('/')[-1])
+        elif 3000 <= size:
+            size_3000_plus.append(fn.split('/')[-1])
 
         if len(degrees) == 1:
             time_est += 30
@@ -82,13 +86,14 @@ if __name__ == '__main__':
             time_est += 100 # Without GLNS
 
             too_big.append(fn)
-            if size > biggest_size:
-                biggest_size = size
-                biggest = fn
 
         else: # Normal, with GLNS
             time_est += 100 + size
             time_glns += 5 + size
+
+        if size > biggest_size and not g_utils.is_complete(G) and not k_utils.is_transformed_tsp(G):
+            biggest_size = size
+            biggest = fn
         
         index = size // 100
         index = min(index, len(sizes) - 1)
@@ -101,6 +106,7 @@ if __name__ == '__main__':
     print('time_est: {}'.format(time_est))
     print('time_glns: {}'.format(time_glns))
     print('size_1000_2250: {}'.format(','.join(size_1000_2250)))
+    print('size_3000_plus: {}'.format(','.join(size_3000_plus)))
     # behind in: 102,108,160,177,18,180,189,205,211,241,306,322,351,360,366,373,387,415,427,429,438,453,460,478,480,487,52,53,534,537,564,568,574,583,603,610,613,658,664,667,678,685,693,722,93,99
     #print(sizes[18])
     
