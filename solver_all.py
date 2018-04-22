@@ -43,7 +43,7 @@ def solve_file(tup):
             old_cost = seq(k_utils.cost(G, old_tour, old_ds)).sum()
         except:
             print('Load old {} failed.'.format(fname))
-            pass
+            return
 
 
         out_tour = seq(tour).map(lambda i: names[i]).to_list()

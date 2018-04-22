@@ -207,7 +207,7 @@ def solve_complete(G, start):
     if not g_utils.is_complete(G):
         raise Exception('G is not complete')
     def value(v):
-        return G.nodes[v]['weight'] + 0 if v == start else (2 * G[v][start]['weight'])
+        return G.nodes[v]['weight'] + (0 if v == start else (2 * G[v][start]['weight']))
     best = seq(G.nodes).min_by(value)
     if best == start:
         return [ start ], { start }
