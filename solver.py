@@ -223,21 +223,21 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         #timeout = 15 + len(G) + len(G.edges)
         timeout = s ** 2 / 1000 + s / 4
         timeout = max(1, int(complexity * timeout))
-        timeout = min(timeout, int(0.50 * 3600)) # max 30 min #6 hours (todo)
+        timeout = min(timeout, 1 * 3600) # max 1 hour (todo)
 
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
     outputs = []
 
     # These could be done in parallel to make latency of single problem a lot faster,
     # but since all the problems are already in parallel, it wouldn't increase throughput.
-    try:
+    """try:
         tour_gtsp = gtsp_solver_interface.run_glkh(path, timeout)
         output = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
         if output:
             outputs.append(output)
     except:
         print('FAILED to run GLKH.')
-        pass
+        pass"""
 
     try:
         tour_gtsp = gtsp_solver_interface.run_glns(path, timeout)

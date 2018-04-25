@@ -38,7 +38,7 @@ def solve_file(tup):
 
         # compare with existing
         old_cost = float('inf')
-        if os.path.isfile(OUTPUT_PATH + fname):
+        if os.path.isfile(OUTPUT_PATH + fname + '.out'):
             try:
                 old_tour, old_ds = writer.readOutFile(OUTPUT_PATH + fname, names=names)
                 old_cost = seq(k_utils.cost(G, old_tour, old_ds)).sum()
