@@ -16,7 +16,11 @@ if __name__ == '__main__':
         if not fn.endswith('.in'):
             continue
         # print(fn)
-        G, start = writer.readInFile(path + fn[:-3])
+        try:
+            G, start, _ = writer.readInFile(path + fn[:-3])
+        except:
+            print('Failed on input ' + fn)
+            raise
 
         a = nx.to_numpy_matrix(G)
         a = np.array(a)
