@@ -14,7 +14,7 @@ def init_worker():
 
 def write_temp_gtsp(dist, ids, clusters):
     path = 'temp/temp_interface_{}_{}.gtsp'.format(os.getpid(), random.randint(0, int(1e9)))
-    with open(path, 'w+') as output_file:
+    with open(path, 'w+', buffering=256 * 1024 ** 2) as output_file:
         gtsp.output_gtsp(output_file, dist, ids, clusters, name='temp_interface')
     return path
 
