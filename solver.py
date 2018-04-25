@@ -222,7 +222,7 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         s = len(G) + len(G.edges)
         #timeout = 15 + len(G) + len(G.edges)
         timeout = s ** 2 / 1000 + s / 4
-        timeout = max(1, int(complexity * timeout))
+        timeout = max(60, int(complexity * timeout))
         timeout = min(timeout, 1 * 3600) # max 1 hour (todo)
 
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
@@ -266,7 +266,7 @@ def solve_transformed_tsp_using_glns(G, start, timeout=None, complexity=1):
 
     if timeout == None:
         timeout = 5 * len(G_tsp)
-        timeout = max(1, int(complexity * timeout))
+        timeout = max(20, int(complexity * timeout))
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
     tour_tsp = gtsp_solver_interface.run_glns(path, timeout=timeout)
 
