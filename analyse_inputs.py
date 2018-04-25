@@ -34,7 +34,7 @@ import kingdom_utils as k_utils
 # Tour Len: 22, DS Len: 13
 # [0, 10, 11, 40, 97, 47, 48, 81, 30, 79, 6, 75, 32, 88, 35, 88, 28, 97, 14, 56, 3, 66] {0, 3, 6, 10, 11, 14, 28, 30, 32, 35, 40, 47, 48}
 
-G, names, start = writer.readInFile('skeleton/inputs/3')
+G, names, start = writer.readInFile('skeleton/inputs/730')
 # print(G.nodes[8])
 print(len(G) + len(G.edges))
 
