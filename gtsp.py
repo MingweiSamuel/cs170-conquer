@@ -312,7 +312,7 @@ def output_gtsp(output, dist, ids, clusters, name='unnamed', mult=1e5):
             if u == v:
                 output.write('0     ')
             else:
-                s = str(int(mult * dist(ids[u], ids[v])))
+                s = str(int(round(mult * dist(ids[u], ids[v]))))
                 output.write(f'{s: <5}')
             output.write(' ')
         output.write('\n')
