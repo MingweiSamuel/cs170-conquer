@@ -4,6 +4,7 @@ import random
 import re
 import gtsp
 import math
+from functional import seq
 from networkx.utils import pairwise
 
 import skeleton.utils as utils

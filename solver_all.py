@@ -38,12 +38,13 @@ def solve_file(tup):
 
         # compare with existing
         old_cost = float('inf')
-        try:
-            old_tour, old_ds = writer.readOutFile(OUTPUT_PATH + fname, names=names)
-            old_cost = seq(k_utils.cost(G, old_tour, old_ds)).sum()
-        except:
-            print('Load old {} failed.'.format(fname))
-            return
+        if os.path.isfile(OUTPUT_PATH + fname):
+            try:
+                old_tour, old_ds = writer.readOutFile(OUTPUT_PATH + fname, names=names)
+                old_cost = seq(k_utils.cost(G, old_tour, old_ds)).sum()
+            except:
+                print('Load old {} failed.'.format(fname))
+                return
 
 
         out_tour = seq(tour).map(lambda i: names[i]).to_list()

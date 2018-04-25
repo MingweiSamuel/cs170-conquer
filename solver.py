@@ -223,7 +223,7 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         #timeout = 15 + len(G) + len(G.edges)
         timeout = s ** 2 / 1000 + s / 4
         timeout = max(1, int(complexity * timeout))
-        timeout = min(timeout, 6 * 3600) # max 6 hours (todo)
+        timeout = min(timeout, int(0.50 * 3600)) # max 30 min #6 hours (todo)
 
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
     outputs = []
