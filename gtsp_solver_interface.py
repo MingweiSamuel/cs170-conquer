@@ -60,17 +60,25 @@ SEED = {}
 def run_glns(path, timeout=10):
     print('  Running GLNS on {} with timeout {}.'.format(path, timeout))
     # stdoutdata = subprocess.getoutput('julia GLNS/GLNScmd.jl ' + path + ' -max_time=' + str(timeout) + ' -trials=10000')
-    proc = subprocess.Popen([ 'julia', '--depwarn=no', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=10', '-restarts=100'],
+    proc = subprocess.Popen([ 'julia', '--depwarn=no', 'GLNS/GLNScmd.jl', path, '-max_time=' + str(timeout), '-trials=100', '-restarts=100' ],
             stdout=subprocess.PIPE)
     # proc = subprocess.Popen([ 'sleep', '100' ], stdout=subprocess.PIPE, preexec_fn=init_worker)
     tour = None
     while proc.poll() is None:
         err = False
         try:
-            line = proc.stdout.readline()
-            if line is None:
+            line = ''
+            while True:
+                char = proc.stdout.read(1)
+                if not char:
+                    break
+                char = char.decode('utf-8')
+                line += char
+                if char == '\n' or char == '\r':
+                    break
+            if not line:
                 break
-            line = line.decode('utf-8')
+            # line = line.decode('utf-8')
             print(line.rstrip()) # DEBUG
             if line.startswith('Cost'):
                 # print(line)
