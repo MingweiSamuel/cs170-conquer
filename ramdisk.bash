@@ -1,2 +1,2 @@
-mount -t ramfs -o 50g ramfs ./temp
+mount -t ramfs -o 12g ramfs ./temp
 chown mingwei_samuel ./temp

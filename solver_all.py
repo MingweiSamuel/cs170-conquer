@@ -95,10 +95,10 @@ def main():
     # dangerous line...don't kill your machine
     # ~1:1 cpu ratio. Putting it over 1:1 just causes GLNS to just run less well
     # in the same amount of time, I think.
-    workers = mp.cpu_count() - 1
+    workers = mp.cpu_count()
     if workers > len(inputs):
         workers = len(inputs)
-    
+
     print('Starting pool with {} workers.'.format(workers))
     # original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     pool = mp.Pool(workers, init_worker)
