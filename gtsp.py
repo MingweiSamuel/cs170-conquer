@@ -288,7 +288,7 @@ def mapped_gtsp_to_conquer_solution(tour, start, ids, og_path):
 
 
         
-def output_gtsp(output, dist, ids, clusters, name='unnamed', mult=1e5):
+def output_gtsp(output, dist, ids, clusters, name='unnamed', mult=1e6):
     """
     NAME : rat575
     COMMENT : Rattled grid (Pulleyblank)
