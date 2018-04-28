@@ -223,7 +223,7 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         #timeout = 15 + len(G) + len(G.edges)
         timeout = s ** 2 / 1000 + s / 4
         timeout = max(60, int(complexity * timeout))
-        timeout = min(timeout, 1 * 3600) # max 1 hour (todo)
+        timeout = min(timeout, int(3/4 * 3600)) # max 3/4 hour (todo)
 
     path = gtsp_solver_interface.write_temp_gtsp(dist, ids, clusters)
     outputs = []
@@ -242,7 +242,7 @@ def solve_using_gtsp_solvers(G, start, timeout=None, complexity=1):
         pass"""
 
     # repeat a bunch of times now
-    for _ in range(6):
+    for _ in range(8):
         try:
             tour_gtsp = gtsp_solver_interface.run_glns(path, timeout)
             output = gtsp.mapped_gtsp_to_conquer_solution(tour_gtsp, start, ids, og_path)
