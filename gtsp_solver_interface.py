@@ -81,8 +81,8 @@ def run_glns(path, timeout=10):
                 break
             # line = line.decode('utf-8')
             i += 1
-            if i % 60 == 0: # every 30 seconds (0.5 sec per line)
-                print(line.rstrip()) # DEBUG
+            if i % 240 == 0: # every ~2 min (0.5 sec per line)
+                print('    ', line.rstrip()) # DEBUG
 
             if line.startswith('Cost'):
                 # print(line)
